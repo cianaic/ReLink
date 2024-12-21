@@ -7,6 +7,7 @@ import {
   signInWithPopup
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
+import { saveUserProfile, getUserProfile } from '../utils/database';
 
 const AuthContext = createContext();
 
@@ -16,10 +17,20 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  function signup(email, password) {
-    return createUserWithEmailAndPassword(auth, email, password);
+  async function signup(email, password) {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    // Create initial user profile
+    await saveUserProfile(result.user.uid, {
+      email: result.user.email,
+      createdAt: new Date().toISOString(),
+      displayName: result.user.displayName,
+      photoURL: result.user.photoURL,
+      lastSignIn: new Date().toISOString()
+    });
+    return result;
   }
 
   function login(email, password) {
@@ -30,13 +41,44 @@ export function AuthProvider({ children }) {
     return signOut(auth);
   }
 
-  function signInWithGoogle() {
-    return signInWithPopup(auth, googleProvider);
+  async function signInWithGoogle() {
+    const result = await signInWithPopup(auth, googleProvider);
+    // Create/update user profile for Google sign-in
+    await saveUserProfile(result.user.uid, {
+      email: result.user.email,
+      displayName: result.user.displayName,
+      photoURL: result.user.photoURL,
+      lastSignIn: new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    });
+    return result;
+  }
+
+  async function refreshUserProfile() {
+    if (currentUser) {
+      try {
+        const profile = await getUserProfile(currentUser.uid);
+        setUserProfile(profile);
+      } catch (error) {
+        console.error('Error refreshing user profile:', error);
+      }
+    }
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      if (user) {
+        // Fetch user profile when auth state changes
+        try {
+          const profile = await getUserProfile(user.uid);
+          setUserProfile(profile);
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+        }
+      } else {
+        setUserProfile(null);
+      }
       setLoading(false);
     });
 
@@ -45,10 +87,12 @@ export function AuthProvider({ children }) {
 
   const value = {
     currentUser,
+    userProfile,
     signup,
     login,
     logout,
-    signInWithGoogle
+    signInWithGoogle,
+    refreshUserProfile
   };
 
   return (

@@ -3,7 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Login from './components/Login';
 import Signup from './components/Signup';
-import Dashboard from './components/Dashboard';
+import Profile from './components/Profile';
+import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
 function App() {
@@ -12,7 +13,16 @@ function App() {
       <AuthProvider>
         <div className="App">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            } />
+            <Route path="/profile" element={
+              <PrivateRoute>
+                <Profile />
+              </PrivateRoute>
+            } />
             <Route path="/signup" element={<Signup />} />
             <Route path="/login" element={<Login />} />
           </Routes>

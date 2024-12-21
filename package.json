@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@craco/craco": "^7.1.0",
+    "@craco/craco": "^5.9.0",
     "@headlessui/react": "^2.1.10",
     "@heroicons/react": "^2.1.5",
     "@testing-library/jest-dom": "^5.17.0",
@@ -12,8 +12,8 @@
     "firebase": "^10.14.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.27.0",
-    "react-scripts": "5.0.1",
+    "react-router-dom": "^6.28.1",
+    "react-scripts": "^5.0.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
