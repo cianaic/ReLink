@@ -17,6 +17,9 @@ service cloud.firestore {
       // Allow users to create relinks if they haven't exceeded monthly limit
       allow create: if request.auth != null 
         && request.resource.data.userId == request.auth.uid;
+      // Allow users to update and delete their own relinks
+      allow update, delete: if request.auth != null 
+        && resource.data.userId == request.auth.uid;
     }
   }
 }

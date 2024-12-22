@@ -799,6 +799,7 @@ input:focus, textarea:focus {
   border-radius: 8px;
   border: 1px solid #eee;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .saved-link-entry:hover {
@@ -809,26 +810,52 @@ input:focus, textarea:focus {
 .preview-meta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid #eee;
   color: #666;
   font-size: 0.813rem;
+  flex-wrap: wrap;
+}
+
+.preview-site {
+  color: #2196f3;
+  font-weight: 500;
+}
+
+.preview-author {
+  color: #666;
+  font-style: italic;
 }
 
 .preview-date {
-  color: #666;
-  font-size: 0.813rem;
+  color: #999;
 }
 
-.saved-comment {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #eee;
+.preview-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  text-decoration: none;
+  display: block;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.preview-title:hover {
+  color: #2196f3;
+}
+
+.preview-description {
   color: #666;
   font-size: 0.875rem;
-  line-height: 1.5;
+  line-height: 1.6;
+  margin: 12px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 h3 {
@@ -907,4 +934,125 @@ h3 {
   transform: translateY(-2px);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.saved-link-entry {
+  position: relative;
+}
+
+.link-settings {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+}
+
+.link-settings-button {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 20px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.link-settings-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.link-settings-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 4px 0;
+  min-width: 120px;
+  z-index: 20;
+}
+
+.link-settings-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: #333;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.link-settings-menu button:hover {
+  background: #f5f5f5;
+}
+
+.link-settings-menu button.delete {
+  color: #ff4444;
+}
+
+.link-settings-menu button.delete:hover {
+  background: #fff1f1;
+}
+
+.edit-mode .link-preview {
+  opacity: 0.7;
+}
+
+.edit-form {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.edit-form input,
+.edit-form textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.edit-form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.edit-form-actions button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-form-actions .save {
+  background: #2196f3;
+  color: white;
+  border: none;
+}
+
+.edit-form-actions .save:hover {
+  background: #1976d2;
+}
+
+.edit-form-actions .cancel {
+  background: white;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.edit-form-actions .cancel:hover {
+  background: #f5f5f5;
 }
