@@ -1,118 +1,184 @@
-const functions = require('firebase-functions');
+const { onRequest, onCall } = require('firebase-functions/v2/https');
+const { onDocumentCreated, onDocumentUpdated, onDocumentDeleted } = require('firebase-functions/v2/firestore');
 const admin = require('firebase-admin');
 const axios = require('axios');
 const cors = require('cors')({ origin: true });
+const { Redis } = require('@upstash/redis');
+const functions = require('firebase-functions');
 
 // Initialize Firebase Admin
 admin.initializeApp();
 
-exports.fetchUrlMetadata = functions.https.onRequest((req, res) => {
-  return cors(req, res, async () => {
+// Initialize Redis client
+const redis = new Redis({
+  url: functions.config().upstash.redis_url,
+  token: functions.config().upstash.redis_token
+});
+
+// Fetch URL metadata function
+exports.fetchUrlMetadata = onRequest(
+  { 
+    cors: true,
+    maxInstances: 10
+  },
+  async (req, res) => {
     try {
-      // Check authentication
+      // Verify Firebase ID token
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        console.error('Missing or invalid authorization header');
-        res.status(401).json({ error: 'Unauthorized' });
+        res.status(403).json({ error: 'Unauthorized' });
         return;
       }
 
-      try {
-        const idToken = authHeader.split('Bearer ')[1];
-        await admin.auth().verifyIdToken(idToken);
-      } catch (authError) {
-        console.error('Auth error:', authError);
-        res.status(401).json({ error: 'Invalid authentication token' });
-        return;
-      }
+      const idToken = authHeader.split('Bearer ')[1];
+      await admin.auth().verifyIdToken(idToken);
 
       // Get URL from request body
       const { url } = req.body;
       if (!url) {
-        console.error('Missing URL in request body');
         res.status(400).json({ error: 'URL is required' });
         return;
       }
 
-      console.log('Fetching metadata for URL:', url);
-
-      // Fetch metadata using iframely
-      const iframelyApiKey = functions.config().iframely.key;
-      if (!iframelyApiKey) {
-        console.error('Iframely API key not configured');
-        res.status(500).json({ error: 'API configuration missing' });
-        return;
-      }
-
-      try {
-        // Add options to get more complete metadata
-        const iframelyUrl = `https://iframe.ly/api/iframely?url=${encodeURIComponent(url)}&api_key=${iframelyApiKey}&omit_script=1`;
-        const response = await axios({
-          method: 'GET',
-          url: iframelyUrl,
-          timeout: 10000 // 10 second timeout
-        });
-
-        if (!response.data) {
-          console.error('No data received from Iframely API');
-          throw new Error('No data received from Iframely API');
+      // Call iframely API
+      const iframelyUrl = `https://iframe.ly/api/iframely?url=${encodeURIComponent(url)}&api_key=${functions.config().iframely.key}`;
+      const response = await axios.get(iframelyUrl);
+      
+      res.json({
+        data: {
+          title: response.data.meta?.title || response.data.title || url,
+          description: response.data.meta?.description || '',
+          image: response.data.links?.thumbnail?.[0]?.href || '',
+          author: response.data.meta?.author || '',
+          site: response.data.meta?.site || '',
+          date: response.data.meta?.date || ''
         }
-
-        console.log('Successfully fetched metadata:', response.data);
-
-        // Extract metadata from iframely response
-        const metadata = response.data;
-        
-        // Try to get the most meaningful title
-        let title = '';
-        if (metadata.meta?.title) {
-          title = metadata.meta.title;
-        } else if (metadata.meta?.site) {
-          title = metadata.meta.site;
-        } else if (metadata.title) {
-          title = metadata.title;
-        } else {
-          // If no title found, try to get site name or hostname
-          const urlObj = new URL(url);
-          title = metadata.meta?.site_name || urlObj.hostname;
-        }
-
-        res.json({
-          data: {
-            title: title,
-            description: metadata.meta?.description || '',
-            image: metadata.links?.thumbnail?.[0]?.href || metadata.links?.icon?.[0]?.href || '',
-            url: metadata.url || url,
-            author: metadata.meta?.author || '',
-            site: metadata.meta?.site || '',
-            date: metadata.meta?.date || ''
-          }
-        });
-      } catch (apiError) {
-        console.error('Iframely API error:', apiError.response?.data || apiError.message);
-        
-        // Fallback to basic URL info
-        const urlObj = new URL(url);
-        console.log('Falling back to basic URL info for:', urlObj.hostname);
-        
-        res.json({
-          data: {
-            title: urlObj.hostname,
-            description: '',
-            image: '',
-            url: url,
-            author: '',
-            site: urlObj.hostname,
-            date: ''
-          }
-        });
-      }
-    } catch (error) {
-      console.error('General error:', error);
-      res.status(500).json({ 
-        error: 'Failed to process URL',
-        details: error.message
       });
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).json({ error: error.message });
     }
-  });
-}); 
+  }
+);
+
+// Function to manage feed operations
+exports.manageFeed = onCall(
+  { 
+    maxInstances: 10
+  },
+  async (data, context) => {
+    if (!context.auth) {
+      throw new Error('Must be logged in to manage feed.');
+    }
+
+    const { operation, payload } = data;
+
+    switch (operation) {
+      case 'invalidateCache':
+        try {
+          const cachePattern = 'feed:*';
+          await redis.del(cachePattern);
+          return { success: true, message: 'Cache invalidated successfully' };
+        } catch (error) {
+          console.error('Redis error:', error);
+          throw new Error('Failed to invalidate cache');
+        }
+
+      case 'getFeedPage':
+        try {
+          const { page, userId } = payload;
+          const cacheKey = `feed:${page}:${userId || 'public'}`;
+          
+          // Try to get from cache
+          const cachedData = await redis.get(cacheKey);
+          if (cachedData) {
+            return { cached: true, data: JSON.parse(cachedData) };
+          }
+
+          // If not in cache, get from Firestore and cache it
+          const postsRef = admin.firestore().collection('shared_relinks');
+          const query = postsRef
+            .orderBy('createdAt', 'desc')
+            .limit(10)
+            .offset((page - 1) * 10);
+
+          const snapshot = await query.get();
+          const posts = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt.toDate().toISOString()
+          }));
+
+          // Cache the results
+          await redis.set(cacheKey, JSON.stringify(posts), {
+            ex: 300 // 5 minutes
+          });
+
+          return { cached: false, data: posts };
+        } catch (error) {
+          console.error('Feed error:', error);
+          throw new Error('Failed to get feed data');
+        }
+
+      default:
+        throw new Error('Invalid operation');
+    }
+  }
+);
+
+// Function to handle post creation with Redis cache invalidation
+exports.onPostCreated = onDocumentCreated(
+  { 
+    document: 'shared_relinks/{postId}',
+    maxInstances: 10
+  },
+  async (event) => {
+    try {
+      // Invalidate the feed cache
+      const cachePattern = 'feed:*';
+      await redis.del(cachePattern);
+      
+      console.log('Cache invalidated after new post creation');
+    } catch (error) {
+      console.error('Failed to invalidate cache:', error);
+    }
+  }
+);
+
+// Function to handle post updates with Redis cache invalidation
+exports.onPostUpdated = onDocumentUpdated(
+  { 
+    document: 'shared_relinks/{postId}',
+    maxInstances: 10
+  },
+  async (event) => {
+    try {
+      // Invalidate the feed cache
+      const cachePattern = 'feed:*';
+      await redis.del(cachePattern);
+      
+      console.log('Cache invalidated after post update');
+    } catch (error) {
+      console.error('Failed to invalidate cache:', error);
+    }
+  }
+);
+
+// Function to handle post deletion with Redis cache invalidation
+exports.onPostDeleted = onDocumentDeleted(
+  { 
+    document: 'shared_relinks/{postId}',
+    maxInstances: 10
+  },
+  async (event) => {
+    try {
+      // Invalidate the feed cache
+      const cachePattern = 'feed:*';
+      await redis.del(cachePattern);
+      
+      console.log('Cache invalidated after post deletion');
+    } catch (error) {
+      console.error('Failed to invalidate cache:', error);
+    }
+  }
+);

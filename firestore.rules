@@ -21,5 +21,15 @@ service cloud.firestore {
       allow update, delete: if request.auth != null 
         && resource.data.userId == request.auth.uid;
     }
+    match /shared_relinks/{document} {
+      // Allow authenticated users to read all shared links
+      allow read: if request.auth != null;
+      // Allow users to create shared links
+      allow create: if request.auth != null 
+        && request.resource.data.userId == request.auth.uid;
+      // Allow users to update and delete their own shared links
+      allow update, delete: if request.auth != null 
+        && resource.data.userId == request.auth.uid;
+    }
   }
 }

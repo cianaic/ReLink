@@ -5,6 +5,7 @@ import { collection, addDoc, Timestamp, query, where, getDocs, orderBy, deleteDo
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { format, setYear } from 'date-fns';
 import { getAuth } from 'firebase/auth';
+import feedService from '../services/feedService';
 
 // Helper function to safely get hostname from URL
 const getHostname = (urlString) => {
@@ -77,6 +78,9 @@ export default function Vault() {
   const { currentUser } = useAuth();
   const [editingLink, setEditingLink] = useState(null);
   const [openMenu, setOpenMenu] = useState(null);
+  const [selectedLinks, setSelectedLinks] = useState([]);
+  const [isSharing, setIsSharing] = useState(false);
+  const [showShareSuccess, setShowShareSuccess] = useState(false);
 
   // Set dates for 2024
   const now = new Date();
@@ -295,48 +299,93 @@ export default function Vault() {
   };
 
   const handleDelete = async (linkId) => {
-    if (!linkId) {
-      console.error('No link ID provided for deletion');
-      setError('Cannot delete link: Invalid ID');
+    try {
+      console.log('Deleting link with ID:', linkId);
+      const linkRef = doc(db, "relinks", linkId);
+      await deleteDoc(linkRef);
+      console.log('Link deleted successfully');
+      await loadSavedLinks();
+      setSuccess('Link deleted successfully');
+    } catch (error) {
+      console.error('Delete error:', error);
+      setError('Failed to delete link');
+    }
+  };
+
+  const handleEdit = async (linkId, updates) => {
+    try {
+      console.log('Editing link with ID:', linkId);
+      const linkRef = doc(db, "relinks", linkId);
+      await updateDoc(linkRef, {
+        ...updates,
+        updatedAt: Timestamp.now()
+      });
+      console.log('Link updated successfully');
+      setEditingLink(null);
+      await loadSavedLinks();
+      setSuccess('Link updated successfully');
+    } catch (error) {
+      console.error('Edit error:', error);
+      setError('Failed to update link');
+    }
+  };
+
+  const handleShareMonthly = () => {
+    setIsSharing(true);
+  };
+
+  const handleShareSubmit = async () => {
+    if (selectedLinks.length === 0 || selectedLinks.length > 5) {
+      setError('Please select between 1 and 5 links to share');
       return;
     }
 
     try {
-      console.log('Attempting to delete link with ID:', linkId);
-      // Create a reference to the specific document
-      const linkRef = doc(db, "relinks", linkId);
-      // Delete the document
-      await deleteDoc(linkRef);
-      console.log('Link deleted successfully');
-      // Update local state
-      setSavedLinks(prevLinks => prevLinks.filter(link => link.id !== linkId));
-      setSuccess('Link deleted successfully');
-      setOpenMenu(null);
-      // Reload the links to ensure sync
-      await loadSavedLinks();
+      setError('');
+      const sharedLinks = selectedLinks.map(link => ({
+        url: link.url,
+        title: link.preview.title || getHostname(link.url),
+        description: link.preview.description || '',
+        image: link.preview.image || '',
+        comment: link.comment || '',
+        author: link.preview.author || '',
+        site: link.preview.site || getHostname(link.url),
+        date: link.preview.date || ''
+      }));
+
+      await feedService.addDoc({
+        userId: currentUser.uid,
+        authorName: currentUser.displayName || currentUser.email,
+        links: sharedLinks,
+        month: format(year2024, 'MMMM yyyy')
+      });
+
+      setSuccess('Links shared successfully!');
+      setIsSharing(false);
+      setSelectedLinks([]);
+      setShowShareSuccess(true);
+      setTimeout(() => setShowShareSuccess(false), 3000); // Hide after 3 seconds
+      
+      // Clear any previous errors
+      setError('');
+      
+      // Optionally reload the feed if it's visible
+      if (window.location.pathname === '/feed') {
+        window.location.reload();
+      }
     } catch (error) {
-      console.error('Error deleting link:', error);
-      setError('Failed to delete link: ' + error.message);
+      console.error('Error sharing links:', error);
+      setError('Failed to share links: ' + error.message);
     }
   };
 
-  const handleEdit = async (linkId, updatedData) => {
-    try {
-      console.log('Updating link:', linkId, 'with data:', updatedData);
-      const linkRef = doc(db, "relinks", linkId);
-      await updateDoc(linkRef, {
-        url: updatedData.url,
-        comment: updatedData.comment,
-        preview: updatedData.preview,
-        updatedAt: Timestamp.now()
-      });
-      console.log('Link updated successfully');
-      setSuccess('Link updated successfully');
-      await loadSavedLinks();
-      setEditingLink(null);
-    } catch (error) {
-      console.error('Error updating link:', error);
-      setError('Failed to update link: ' + error.message);
+  const toggleLinkSelection = (link) => {
+    if (selectedLinks.find(l => l.id === link.id)) {
+      setSelectedLinks(selectedLinks.filter(l => l.id !== link.id));
+    } else if (selectedLinks.length < 5) {
+      setSelectedLinks([...selectedLinks, link]);
+    } else {
+      setError('You can only select up to 5 links');
     }
   };
 
@@ -346,92 +395,139 @@ export default function Vault() {
       {error && <div className="error">{error}</div>}
       {success && <div className="success">{success}</div>}
       
-      <div className="month-section">
+      <div className="vault-header">
         <h4 className="month-header">{currentMonthKey}</h4>
-        
-        <div className="add-links-section">
-          <div className="vault-actions">
-            <button 
-              type="button" 
-              onClick={addNewLinkEntry}
-              className="add-link-button"
-            >
-              + Add Another Link
-            </button>
-          </div>
+        <button 
+          className="share-monthly-button"
+          onClick={handleShareMonthly}
+        >
+          Share {format(year2024, 'MMMM')} Relinks
+        </button>
+      </div>
 
-          {[...linkEntries].map((entry, index) => (
-            <div key={entry.id || index} className="link-entry">
-              {index !== linkEntries.length - 1 && (
-                <button
-                  type="button"
-                  className="remove-link-button"
-                  onClick={() => removeLinkEntry(index)}
-                >
-                  ×
-                </button>
-              )}
-              <div className="form-group">
-                <label>Link {linkEntries.length - index}</label>
-                <input
-                  type="url"
-                  value={entry.url}
-                  onChange={(e) => handleLinkChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
-                  onPaste={(e) => {
-                    e.preventDefault();
-                    const pastedText = e.clipboardData.getData('text');
-                    handleLinkChange(index, pastedText);
-                  }}
-                  placeholder="https://"
-                />
-                {entry.preview && (
-                  <div className="link-preview">
-                    <a href={entry.url} target="_blank" rel="noopener noreferrer" className="preview-title">
-                      {entry.preview.title}
-                    </a>
-                    {entry.preview.image && (
-                      <div className="preview-image">
-                        <img src={entry.preview.image} alt={entry.preview.title || 'Link preview'} />
-                      </div>
-                    )}
-                    {entry.preview.description && (
-                      <p className="preview-description">{entry.preview.description}</p>
-                    )}
-                    <div className="preview-meta">
-                      {entry.preview.site && (
-                        <span className="preview-site">{entry.preview.site}</span>
-                      )}
-                      {entry.preview.author && (
-                        <span className="preview-author">By {entry.preview.author}</span>
-                      )}
-                      {entry.preview.date && (
-                        <span className="preview-date">{entry.preview.date}</span>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="form-group">
-                <textarea
-                  value={entry.comment}
-                  onChange={(e) => handleCommentChange(index, e.target.value)}
-                  placeholder="Share your thoughts about this link..."
-                />
-              </div>
+      <div className="add-links-section">
+        <div className="vault-actions">
+          <button 
+            type="button" 
+            onClick={addNewLinkEntry}
+            className="add-link-button"
+          >
+            + Add Another Link
+          </button>
+        </div>
+
+        {[...linkEntries].map((entry, index) => (
+          <div key={entry.id || index} className="link-entry">
+            {index !== linkEntries.length - 1 && (
+              <button
+                type="button"
+                className="remove-link-button"
+                onClick={() => removeLinkEntry(index)}
+              >
+                ×
+              </button>
+            )}
+            <div className="form-group">
+              <label>Link {linkEntries.length - index}</label>
+              <input
+                type="url"
+                value={entry.url}
+                onChange={(e) => handleLinkChange(index, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(index, e)}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  const pastedText = e.clipboardData.getData('text');
+                  handleLinkChange(index, pastedText);
+                }}
+                placeholder="https://"
+              />
               {entry.preview && (
-                <button
-                  type="button"
-                  className="save-link-button"
-                  onClick={() => saveLink(entry, index)}
-                >
-                  Save Link
-                </button>
+                <div className="link-preview">
+                  <a href={entry.url} target="_blank" rel="noopener noreferrer" className="preview-title">
+                    {entry.preview.title}
+                  </a>
+                  {entry.preview.image && (
+                    <div className="preview-image">
+                      <img src={entry.preview.image} alt={entry.preview.title || 'Link preview'} />
+                    </div>
+                  )}
+                  {entry.preview.description && (
+                    <p className="preview-description">{entry.preview.description}</p>
+                  )}
+                  <div className="preview-meta">
+                    {entry.preview.site && (
+                      <span className="preview-site">{entry.preview.site}</span>
+                    )}
+                    {entry.preview.author && (
+                      <span className="preview-author">By {entry.preview.author}</span>
+                    )}
+                    {entry.preview.date && (
+                      <span className="preview-date">{entry.preview.date}</span>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
-          ))}
-        </div>
+            <div className="form-group">
+              <textarea
+                value={entry.comment}
+                onChange={(e) => handleCommentChange(index, e.target.value)}
+                placeholder="Share your thoughts about this link..."
+              />
+            </div>
+            {entry.preview && (
+              <button
+                type="button"
+                className="save-link-button"
+                onClick={() => saveLink(entry, index)}
+              >
+                Save Link
+              </button>
+            )}
+          </div>
+        ))}
       </div>
+
+      {isSharing && (
+        <div className="sharing-modal">
+          <div className="sharing-modal-content">
+            <h3>Select up to 5 links to share</h3>
+            <p>Selected: {selectedLinks.length}/5</p>
+            <div className="selected-links">
+              {savedLinks.map((link) => (
+                <div 
+                  key={link.id} 
+                  className={`link-selection ${selectedLinks.find(l => l.id === link.id) ? 'selected' : ''}`}
+                  onClick={() => toggleLinkSelection(link)}
+                >
+                  <div className="link-preview">
+                    <span className="preview-title">{link.preview.title}</span>
+                    {link.comment && <p className="preview-comment">{link.comment}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="sharing-actions">
+              <button 
+                className="cancel-share" 
+                onClick={() => {
+                  setIsSharing(false);
+                  setSelectedLinks([]);
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="confirm-share"
+                onClick={handleShareSubmit}
+                disabled={selectedLinks.length === 0 || selectedLinks.length > 5}
+              >
+                Share {selectedLinks.length} Links
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="month-section">
         <h4 className="month-header">December 2024</h4>
@@ -569,6 +665,15 @@ export default function Vault() {
           )}
         </div>
       </div>
+
+      {showShareSuccess && (
+        <div className="share-success-popup">
+          <div className="share-success-content">
+            <div className="success-icon">✓</div>
+            <p>Links shared successfully!</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

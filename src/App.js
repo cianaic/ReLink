@@ -1,40 +1,38 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import Login from './components/Login';
-import Signup from './components/Signup';
-import Profile from './components/Profile';
+import { useAuth } from './contexts/AuthContext';
+import Navbar from './components/Navbar';
+import Home from './components/Home';
 import Vault from './components/Vault';
 import Feed from './components/Feed';
-import Navbar from './components/Navbar';
-import PrivateRoute from './components/PrivateRoute';
+import Profile from './components/Profile';
 import './App.css';
+
+// Wrapper component to handle conditional navbar rendering
+const AppContent = () => {
+  const { currentUser } = useAuth();
+
+  return (
+    <div className="app">
+      {currentUser && <Navbar />}
+      <main className={currentUser ? "main-content" : "full-content"}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/vault" element={<Vault />} />
+          <Route path="/feed" element={<Feed />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </main>
+    </div>
+  );
+};
 
 function App() {
   return (
     <Router>
       <AuthProvider>
-        <div className="App">
-          <Routes>
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/*" element={
-              <PrivateRoute>
-                <div className="app-container">
-                  <Navbar />
-                  <main className="main-content">
-                    <Routes>
-                      <Route path="/" element={<Feed />} />
-                      <Route path="/feed" element={<Feed />} />
-                      <Route path="/vault" element={<Vault />} />
-                      <Route path="/profile" element={<Profile />} />
-                    </Routes>
-                  </main>
-                </div>
-              </PrivateRoute>
-            } />
-          </Routes>
-        </div>
+        <AppContent />
       </AuthProvider>
     </Router>
   );

@@ -1,47 +1,30 @@
 import React from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function Navbar() {
+const Navbar = () => {
   const { currentUser } = useAuth();
 
   return (
     <nav className="navbar">
-      <Link to="/" className="logo">
-        ReLink
-      </Link>
-      <div className="nav-profile">
-        {currentUser && (
-          <div className="nav-user-info">
-            <img 
-              src={currentUser.photoURL || '/default-avatar.png'} 
-              alt="Profile" 
-              className="nav-avatar"
-            />
-            <span>{currentUser.displayName || currentUser.email}</span>
-          </div>
-        )}
+      <div className="nav-brand">
+        <Link to="/">ReLink</Link>
       </div>
       <div className="nav-links">
-        <NavLink 
-          to="/feed" 
-          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
-        >
-          Feed
-        </NavLink>
-        <NavLink 
-          to="/vault" 
-          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
-        >
-          Vault
-        </NavLink>
-        <NavLink 
-          to="/profile" 
-          className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
-        >
-          Profile
-        </NavLink>
+        {currentUser ? (
+          <>
+            <Link to="/vault">Vault</Link>
+            <Link to="/feed">Feed</Link>
+            <Link to="/profile" className="profile-link">
+              Profile
+            </Link>
+          </>
+        ) : (
+          <Link to="/">Login</Link>
+        )}
       </div>
     </nav>
   );
-} 
+};
+
+export default Navbar; 
