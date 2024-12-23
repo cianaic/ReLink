@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import feedService from '../services/feedService';
 import { getFriends } from '../services/friendService';
+import { useLocation } from 'react-router-dom';
 
 // Default avatar as a constant to avoid repeated string literals
 const DEFAULT_AVATAR = '/default-avatar.png';
@@ -15,7 +16,26 @@ const Feed = () => {
   const [lastVisibleDoc, setLastVisibleDoc] = useState(null);
   const [friends, setFriends] = useState([]);
   const [deletePostId, setDeletePostId] = useState(null);
+  const [showCopiedToast, setShowCopiedToast] = useState(false);
   const { currentUser } = useAuth();
+  const location = useLocation();
+  const [notification, setNotification] = useState(null);
+
+  // Get the invite link for the current user
+  const inviteLink = useMemo(() => {
+    if (!currentUser) return '';
+    return `${window.location.origin}/connect/${currentUser.uid}`;
+  }, [currentUser]);
+
+  const handleCopyInvite = async () => {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setShowCopiedToast(true);
+      setTimeout(() => setShowCopiedToast(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   // Memoize the friends IDs array to prevent unnecessary recalculations
   const friendIds = useMemo(() => {
@@ -46,15 +66,22 @@ const Feed = () => {
         userIds
       );
 
+      console.log('Feed received posts:', result.posts);
+
       // Process posts and preload images
-      const processedPosts = result.posts.map(post => ({
-        ...post,
-        authorPhotoURL: post.authorPhotoURL || DEFAULT_AVATAR,
-        authorDisplayName: post.authorId === currentUser.uid ? 'You' : (post.authorName || 'Anonymous')
-      }));
+      const processedPosts = result.posts
+        .filter(post => post && post.links && Array.isArray(post.links))
+        .map(post => ({
+          ...post,
+          authorPhotoURL: post.authorPhotoURL || DEFAULT_AVATAR,
+          authorDisplayName: post.authorId === currentUser.uid ? 'You' : (post.authorName || 'Anonymous')
+        }));
+
+      console.log('Feed processed posts:', processedPosts);
 
       setPosts(prev => {
         const newPosts = pageNum === 1 ? processedPosts : [...prev, ...processedPosts];
+        console.log('Feed updated posts:', newPosts);
         return newPosts;
       });
       
@@ -130,6 +157,17 @@ const Feed = () => {
     return () => window.removeEventListener('reloadFeed', handleReload);
   }, [loadPosts, currentUser]);
 
+  useEffect(() => {
+    if (location.state?.showNotification) {
+      setNotification(location.state.notificationMessage);
+      // Clear the notification after 3 seconds
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [location.state]);
+
   const handleLoadMore = () => {
     if (!loading && hasMore) {
       console.log('Loading more posts, page:', page + 1);
@@ -203,6 +241,20 @@ const Feed = () => {
   return (
     <div className="feed-container">
       <h2>Your Feed</h2>
+      <div className="invite-section">
+        <button onClick={handleCopyInvite} className="invite-button">
+          ReLink with Friends
+        </button>
+        {showCopiedToast && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h3>Success!</h3>
+              <p>Invite link copied</p>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="posts">
         {posts.map(post => {
           const isOwnPost = post.authorId === currentUser?.uid;
@@ -285,6 +337,15 @@ const Feed = () => {
         <button onClick={handleLoadMore} className="load-more-btn">
           Load More
         </button>
+      )}
+
+      {notification && (
+        <div className="share-success-popup">
+          <div className="share-success-content">
+            <span className="success-icon">✓</span>
+            {notification}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -70,7 +70,6 @@ export default function Profile() {
     <div className="friends-section">
       <h3>Connect with Friends</h3>
       <div className="share-profile">
-        <p>Share your profile link with friends to connect:</p>
         <button 
           className="share-profile-button"
           onClick={() => {
@@ -80,7 +79,7 @@ export default function Profile() {
             setTimeout(() => setShowShareLink(false), 3000);
           }}
         >
-          Copy Profile Link
+          Share Invite Link
         </button>
         {showShareLink && (
           <div className="share-link-popup">Link copied to clipboard!</div>

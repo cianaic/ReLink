@@ -12,7 +12,8 @@ import {
   deleteDoc,
   doc,
   Timestamp,
-  updateDoc
+  updateDoc,
+  getDoc
 } from 'firebase/firestore';
 
 const POSTS_PER_PAGE = 10;
@@ -60,9 +61,30 @@ const formatDateStamp = (date) => {
 // Check if user has already posted this week
 const hasPostedThisWeek = async (userId) => {
   try {
+    console.log('Checking weekly post for user:', userId);
+    
+    // First check the user's profile for current week post
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    const currentWeekPost = userDoc.data()?.currentWeekPost;
+
+    if (currentWeekPost) {
+      const postWeekStart = new Date(currentWeekPost.weekStart);
+      const currentWeekStart = getWeekStartDate(new Date());
+      
+      // If the stored post is from the current week
+      if (postWeekStart.getTime() === currentWeekStart.getTime()) {
+        console.log('Found current week post in user profile:', currentWeekPost);
+        return true;
+      }
+    }
+
+    // If no current week post in profile, check the posts collection
     const weekStart = getWeekStartDate(new Date());
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 7);
+
+    console.log('Week range:', { weekStart, weekEnd });
 
     const q = query(
       collection(db, 'relinks'),
@@ -72,7 +94,23 @@ const hasPostedThisWeek = async (userId) => {
     );
 
     const snapshot = await getDocs(q);
-    return !snapshot.empty;
+    console.log('Weekly post check found documents:', snapshot.docs.length);
+    
+    if (!snapshot.empty) {
+      // Update user profile with current week post info
+      const post = snapshot.docs[0];
+      await updateDoc(userRef, {
+        currentWeekPost: {
+          postId: post.id,
+          weekStart: weekStart.toISOString(),
+          weekNumber: getWeekNumber(weekStart),
+          updatedAt: new Date().toISOString()
+        }
+      });
+      return true;
+    }
+
+    return false;
   } catch (error) {
     console.error('Error checking weekly post:', error);
     throw new Error('Failed to check weekly post limit');
@@ -86,6 +124,9 @@ const getCurrentWeekPost = async (userId) => {
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 7);
 
+    console.log('Getting current week post for user:', userId);
+    console.log('Week range:', { weekStart, weekEnd });
+
     const q = query(
       collection(db, 'relinks'),
       where('userId', '==', userId),
@@ -95,14 +136,21 @@ const getCurrentWeekPost = async (userId) => {
     );
 
     const snapshot = await getDocs(q);
-    if (snapshot.empty) return null;
+    console.log('Current week post query returned:', snapshot.docs.length, 'documents');
+    
+    if (snapshot.empty) {
+      console.log('No current week post found');
+      return null;
+    }
     
     const doc = snapshot.docs[0];
-    return {
+    const data = {
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate()
     };
+    console.log('Found current week post:', data);
+    return data;
   } catch (error) {
     console.error('Error getting current week post:', error);
     throw new Error('Failed to get current week post');
@@ -146,25 +194,31 @@ const getFeedPage = async (page = 1, lastDoc = null, userIds = []) => {
     const snapshot = await getDocs(q);
     console.log('Query returned', snapshot.docs.length, 'documents');
 
-    const posts = snapshot.docs
-      .map((doc) => {
-        const data = doc.data();
-        const authorInfo = {
-          authorId: data.userId,
-          authorName: data.authorName || 'Anonymous',
-          authorPhotoURL: data.authorPhotoURL || null
-        };
-        
-        return {
-          id: doc.id,
-          ...data,
-          ...authorInfo,
-          createdAt: data.createdAt?.toDate(),
-          dateStamp: data.dateStamp,
-          links: Array.isArray(data.links) ? data.links : []
-        };
-      })
-      .filter(post => post.links && post.links.length > 0); // Filter out posts without links in JavaScript
+    const posts = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      console.log('Processing post:', doc.id, 'data:', data);
+      
+      // Ensure links is always an array
+      const links = data.links || [];
+      console.log('Post links:', links);
+
+      const authorInfo = {
+        authorId: data.userId,
+        authorName: data.authorName || 'Anonymous',
+        authorPhotoURL: data.authorPhotoURL || null
+      };
+      
+      return {
+        id: doc.id,
+        ...data,
+        ...authorInfo,
+        createdAt: data.createdAt?.toDate(),
+        dateStamp: data.dateStamp,
+        links: links
+      };
+    });
+
+    console.log('Processed posts:', posts);
 
     const result = {
       posts,
@@ -192,7 +246,10 @@ const createPost = async (postData) => {
     
     // Check if user has already posted this week
     const hasPosted = await hasPostedThisWeek(postData.userId);
+    console.log('Has posted this week check result:', hasPosted);
+    
     if (hasPosted) {
+      console.log('User has already posted this week');
       throw new Error('You can only create one post per week');
     }
 
@@ -210,8 +267,20 @@ const createPost = async (postData) => {
       month: dateInfo.month
     };
 
+    console.log('Enhanced post data:', enhancedPostData);
     const docRef = await addDoc(collection(db, 'relinks'), enhancedPostData);
     console.log('Post created with ID:', docRef.id);
+
+    // Update user's profile with current week's post info
+    const userRef = doc(db, 'users', postData.userId);
+    await updateDoc(userRef, {
+      currentWeekPost: {
+        postId: docRef.id,
+        weekStart: dateInfo.weekStart.toISOString(),
+        weekNumber: dateInfo.weekNumber,
+        updatedAt: new Date().toISOString()
+      }
+    });
 
     // Clear first page cache
     const firstPageCacheKey = getCacheKey([postData.userId], 1);
@@ -254,7 +323,17 @@ const deletePost = async (postId, userId) => {
     );
 
     const snapshot = await getDocs(q);
-    return snapshot.empty; // Return true if no posts remain for this week
+    const noPostsRemain = snapshot.empty;
+
+    // If this was the current week's post, update the user's profile
+    if (noPostsRemain) {
+      const userRef = doc(db, 'users', userId);
+      await updateDoc(userRef, {
+        currentWeekPost: null
+      });
+    }
+
+    return noPostsRemain;
   } catch (error) {
     console.error('Error deleting post:', error);
     throw new Error('Failed to delete post');

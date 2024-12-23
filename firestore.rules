@@ -2,8 +2,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
-      // Allow users to read basic profile info of any user
-      allow read: if request.auth != null;
+      // Allow anyone to read basic profile info
+      allow read: if true;
       
       // Allow users to write their own data and update friend-related arrays
       allow write: if request.auth != null && (

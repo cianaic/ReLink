@@ -445,27 +445,21 @@ export default function Vault() {
       {error && <div className="error">{error}</div>}
       {success && <div className="success">{success}</div>}
       
-      <div className="vault-header">
-        <h4 className="month-header">{currentMonthKey}</h4>
-        <button 
-          className={`share-monthly-button ${hasSharedThisWeek ? 'shared' : ''}`}
-          onClick={handleShareMonthly}
-        >
-          {hasSharedThisWeek ? 'Edit This Week\'s Links' : 'Share This Week\'s Links'}
-        </button>
+      <div>
+        <div className="vault-header">
+          <h4 className="month-header">{currentMonthKey}</h4>
+        </div>
+        <div className="share-button-container">
+          <button 
+            className={`share-monthly-button ${hasSharedThisWeek ? 'shared' : ''}`}
+            onClick={handleShareMonthly}
+          >
+            {hasSharedThisWeek ? 'Edit ReLink' : 'Share ReLink'}
+          </button>
+        </div>
       </div>
 
       <div className="add-links-section">
-        <div className="vault-actions">
-          <button 
-            type="button" 
-            onClick={addNewLinkEntry}
-            className="add-link-button"
-          >
-            + Add Another Link
-          </button>
-        </div>
-
         {[...linkEntries].map((entry, index) => (
           <div key={entry.id || index} className="link-entry">
             {index !== linkEntries.length - 1 && (
@@ -478,7 +472,7 @@ export default function Vault() {
               </button>
             )}
             <div className="form-group">
-              <label>Link {linkEntries.length - index}</label>
+              <label>New Link</label>
               <input
                 type="url"
                 value={entry.url}
@@ -580,7 +574,6 @@ export default function Vault() {
       )}
 
       <div className="month-section">
-        <h4 className="month-header">December 2024</h4>
         <div className="month-links">
           {loading ? (
             <div className="loading">Loading saved links...</div>

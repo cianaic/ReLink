@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
 import Navbar from './components/Navbar';
@@ -10,6 +10,7 @@ import Profile from './components/Profile';
 import Connect from './components/Connect';
 import Settings from './components/Settings';
 import EditProfile from './components/EditProfile';
+import InviteLanding from './components/InviteLanding';
 import './App.css';
 
 // Configure future flags for React Router v7
@@ -23,11 +24,14 @@ const router = {
 // Wrapper component to handle conditional navbar rendering
 const AppContent = () => {
   const { currentUser } = useAuth();
+  const location = useLocation();
+  const isConnectPage = location.pathname.startsWith('/connect/');
+  const isInvitePage = location.pathname.startsWith('/invite/');
 
   return (
     <div className="app">
-      {currentUser && <Navbar />}
-      <main className={currentUser ? "main-content" : "full-content"}>
+      {currentUser && !isConnectPage && !isInvitePage && <Navbar />}
+      <main className={currentUser && !isConnectPage && !isInvitePage ? "main-content" : "full-content"}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/vault" element={<Vault />} />
@@ -36,6 +40,7 @@ const AppContent = () => {
           <Route path="/settings" element={<Settings />} />
           <Route path="/edit-profile" element={<EditProfile />} />
           <Route path="/connect/:userId" element={<Connect />} />
+          <Route path="/invite/:userId" element={<InviteLanding />} />
         </Routes>
       </main>
     </div>
