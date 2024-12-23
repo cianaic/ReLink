@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { sendFriendRequest } from '../services/friendService';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,6 +11,21 @@ export default function Login() {
   const { login, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
+  const handlePendingInvite = async () => {
+    const pendingInvite = sessionStorage.getItem('pendingInvite');
+    if (pendingInvite) {
+      try {
+        await sendFriendRequest(currentUser.uid, pendingInvite);
+        sessionStorage.removeItem('pendingInvite');
+        navigate(`/connect/${pendingInvite}`);
+      } catch (error) {
+        console.error('Error sending friend request:', error);
+      }
+    } else {
+      navigate('/profile');
+    }
+  };
+
   async function handleSubmit(e) {
     e.preventDefault();
 
@@ -17,11 +33,11 @@ export default function Login() {
       setError('');
       setLoading(true);
       await login(email, password);
-      navigate('/profile');
+      await handlePendingInvite();
     } catch {
       setError('Failed to sign in');
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function handleGoogleSignIn() {
@@ -31,7 +47,7 @@ export default function Login() {
       console.log('Starting Google Sign In...');
       const result = await signInWithGoogle();
       console.log('Google Sign In Result:', result);
-      navigate('/profile');
+      await handlePendingInvite();
     } catch (error) {
       console.error('Google Sign In Error Details:', {
         code: error.code,
@@ -39,8 +55,8 @@ export default function Login() {
         fullError: error
       });
       setError(`Failed to sign in with Google: ${error.message}`);
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (

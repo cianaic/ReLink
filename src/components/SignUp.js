@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
+import { sendFriendRequest } from '../services/friendService';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -8,8 +9,26 @@ export default function Signup() {
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signup, signInWithGoogle } = useAuth();
+  const { signup, signInWithGoogle, currentUser } = useAuth();
   const navigate = useNavigate();
+
+  const handlePendingInvite = async (user) => {
+    const pendingInvite = sessionStorage.getItem('pendingInvite');
+    if (pendingInvite) {
+      try {
+        await sendFriendRequest(user.uid, pendingInvite);
+        sessionStorage.removeItem('pendingInvite');
+        navigate(`/connect/${pendingInvite}`, { 
+          state: { autoRequestSent: true }
+        });
+      } catch (error) {
+        console.error('Error sending friend request:', error);
+        navigate('/profile');
+      }
+    } else {
+      navigate('/profile');
+    }
+  };
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -21,24 +40,24 @@ export default function Signup() {
     try {
       setError('');
       setLoading(true);
-      await signup(email, password);
-      navigate('/profile');
+      const userCredential = await signup(email, password);
+      await handlePendingInvite(userCredential.user);
     } catch {
       setError('Failed to create an account');
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function handleGoogleSignIn() {
     try {
       setError('');
       setLoading(true);
-      await signInWithGoogle();
-      navigate('/profile');
+      const userCredential = await signInWithGoogle();
+      await handlePendingInvite(userCredential.user);
     } catch (error) {
       setError('Failed to sign in with Google');
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   return (

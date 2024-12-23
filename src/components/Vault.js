@@ -81,6 +81,8 @@ export default function Vault() {
   const [selectedLinks, setSelectedLinks] = useState([]);
   const [isSharing, setIsSharing] = useState(false);
   const [showShareSuccess, setShowShareSuccess] = useState(false);
+  const [hasSharedThisWeek, setHasSharedThisWeek] = useState(false);
+  const [currentWeekPost, setCurrentWeekPost] = useState(null);
 
   // Set dates for 2024
   const now = new Date();
@@ -89,6 +91,23 @@ export default function Vault() {
 
   useEffect(() => {
     loadSavedLinks();
+  }, [currentUser]);
+
+  // Update the check for this week's share status
+  useEffect(() => {
+    const checkWeeklyShare = async () => {
+      if (currentUser) {
+        try {
+          const post = await feedService.getCurrentWeekPost(currentUser.uid);
+          setCurrentWeekPost(post);
+          setHasSharedThisWeek(!!post);
+        } catch (error) {
+          console.error('Error checking weekly post:', error);
+          setError('Failed to check weekly post status');
+        }
+      }
+    };
+    checkWeeklyShare();
   }, [currentUser]);
 
   const loadSavedLinks = async () => {
@@ -331,6 +350,16 @@ export default function Vault() {
   };
 
   const handleShareMonthly = () => {
+    if (hasSharedThisWeek && currentWeekPost && Array.isArray(currentWeekPost.links)) {
+      // Pre-select the current week's links if editing
+      const currentLinks = currentWeekPost.links.map(link => {
+        const savedLink = savedLinks.find(saved => saved.url === link.url);
+        return savedLink || link;
+      });
+      setSelectedLinks(currentLinks);
+    } else {
+      setSelectedLinks([]);
+    }
     setIsSharing(true);
   };
 
@@ -344,34 +373,44 @@ export default function Vault() {
       setError('');
       const sharedLinks = selectedLinks.map(link => ({
         url: link.url,
-        title: link.preview.title || getHostname(link.url),
-        description: link.preview.description || '',
-        image: link.preview.image || '',
+        title: link.preview?.title || getHostname(link.url),
+        description: link.preview?.description || '',
+        image: link.preview?.image || '',
         comment: link.comment || '',
-        author: link.preview.author || '',
-        site: link.preview.site || getHostname(link.url),
-        date: link.preview.date || ''
+        author: link.preview?.author || '',
+        site: link.preview?.site || getHostname(link.url),
+        date: link.preview?.date || ''
       }));
 
-      await feedService.addDoc({
+      const postData = {
         userId: currentUser.uid,
+        authorId: currentUser.uid,
         authorName: currentUser.displayName || currentUser.email,
+        authorPhotoURL: currentUser.photoURL,
         links: sharedLinks,
         month: format(year2024, 'MMMM yyyy')
-      });
+      };
 
-      setSuccess('Links shared successfully!');
+      if (hasSharedThisWeek && currentWeekPost) {
+        await feedService.updatePost(postData);
+        setSuccess('Links updated successfully!');
+      } else {
+        await feedService.createPost(postData);
+        setSuccess('Links shared successfully!');
+        setHasSharedThisWeek(true);
+      }
+
       setIsSharing(false);
       setSelectedLinks([]);
       setShowShareSuccess(true);
-      setTimeout(() => setShowShareSuccess(false), 3000); // Hide after 3 seconds
+      setTimeout(() => setShowShareSuccess(false), 3000);
       
-      // Clear any previous errors
-      setError('');
+      // Refresh current week's post
+      const updatedPost = await feedService.getCurrentWeekPost(currentUser.uid);
+      setCurrentWeekPost(updatedPost);
       
-      // Optionally reload the feed if it's visible
       if (window.location.pathname === '/feed') {
-        window.location.reload();
+        window.dispatchEvent(new CustomEvent('reloadFeed'));
       }
     } catch (error) {
       console.error('Error sharing links:', error);
@@ -389,33 +428,38 @@ export default function Vault() {
     }
   };
 
+  // Add event listener for post deletion
+  useEffect(() => {
+    const handlePostDeleted = () => {
+      setHasSharedThisWeek(false);
+      setCurrentWeekPost(null);
+    };
+
+    window.addEventListener('weeklyPostDeleted', handlePostDeleted);
+    return () => window.removeEventListener('weeklyPostDeleted', handlePostDeleted);
+  }, []);
+
   return (
     <div className="vault-container">
       <h2>Your Link Vault</h2>
       {error && <div className="error">{error}</div>}
       {success && <div className="success">{success}</div>}
       
-      <div className="vault-header">
-        <h4 className="month-header">{currentMonthKey}</h4>
-        <button 
-          className="share-monthly-button"
-          onClick={handleShareMonthly}
-        >
-          Share {format(year2024, 'MMMM')} Relinks
-        </button>
+      <div>
+        <div className="vault-header">
+          <h4 className="month-header">{currentMonthKey}</h4>
+        </div>
+        <div className="share-button-container">
+          <button 
+            className={`share-monthly-button ${hasSharedThisWeek ? 'shared' : ''}`}
+            onClick={handleShareMonthly}
+          >
+            {hasSharedThisWeek ? 'Edit ReLink' : 'Share ReLink'}
+          </button>
+        </div>
       </div>
 
       <div className="add-links-section">
-        <div className="vault-actions">
-          <button 
-            type="button" 
-            onClick={addNewLinkEntry}
-            className="add-link-button"
-          >
-            + Add Another Link
-          </button>
-        </div>
-
         {[...linkEntries].map((entry, index) => (
           <div key={entry.id || index} className="link-entry">
             {index !== linkEntries.length - 1 && (
@@ -428,7 +472,7 @@ export default function Vault() {
               </button>
             )}
             <div className="form-group">
-              <label>Link {linkEntries.length - index}</label>
+              <label>New Link</label>
               <input
                 type="url"
                 value={entry.url}
@@ -530,7 +574,6 @@ export default function Vault() {
       )}
 
       <div className="month-section">
-        <h4 className="month-header">December 2024</h4>
         <div className="month-links">
           {loading ? (
             <div className="loading">Loading saved links...</div>
@@ -555,19 +598,6 @@ export default function Vault() {
                         setOpenMenu(null);
                       }}>
                         ✏️ Edit
-                      </button>
-                      <button 
-                        className="delete"
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          console.log('Delete clicked for link:', link.id);
-                          if (window.confirm('Are you sure you want to delete this link?')) {
-                            await handleDelete(link.id);
-                          }
-                        }}
-                      >
-                        🗑️ Delete
                       </button>
                     </div>
                   )}

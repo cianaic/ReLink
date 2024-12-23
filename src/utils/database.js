@@ -93,13 +93,26 @@ export async function uploadProfilePicture(userId, file) {
   try {
     console.log('Starting profile picture upload for user:', userId);
     
+    // Create a unique filename
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `${userId}_${Date.now()}.${fileExtension}`;
+    
     // Create the file reference
-    const fileRef = ref(storage, `profile-pictures/${userId}`);
+    const fileRef = ref(storage, `profile-pictures/${userId}/${fileName}`);
     console.log('Created storage reference');
+    
+    // Set metadata with CORS headers
+    const metadata = {
+      contentType: file.type,
+      customMetadata: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      }
+    };
     
     // Upload the file
     console.log('Uploading file...');
-    const snapshot = await uploadBytes(fileRef, file);
+    const snapshot = await uploadBytes(fileRef, file, metadata);
     console.log('File uploaded successfully');
     
     // Get the download URL
@@ -115,9 +128,6 @@ export async function uploadProfilePicture(userId, file) {
     return photoURL;
   } catch (error) {
     console.error('Error uploading profile picture:', error);
-    if (error.code) {
-      console.error('Error code:', error.code);
-    }
     throw error;
   }
 }

@@ -1,29 +1,15 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { updateUserProfile, uploadProfilePicture, deleteUserProfile, logActivity } from '../utils/database';
-import ActivityHistory from './ActivityHistory';
+import { useNavigate, Link } from 'react-router-dom';
+import { getFriends, getPendingRequests, acceptFriendRequest, rejectFriendRequest } from '../services/friendService';
 
 export default function Profile() {
   const [error, setError] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [displayName, setDisplayName] = useState('');
-  const [bio, setBio] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const fileInputRef = useRef();
-  const { currentUser, userProfile, logout, refreshUserProfile } = useAuth();
+  const [friends, setFriends] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [showShareLink, setShowShareLink] = useState(false);
+  const { currentUser, userProfile, logout } = useAuth();
   const navigate = useNavigate();
-
-  console.log('Current User:', currentUser);
-  console.log('User Profile:', userProfile);
-
-  useEffect(() => {
-    if (userProfile) {
-      setDisplayName(userProfile.displayName || '');
-      setBio(userProfile.bio || '');
-    }
-  }, [userProfile]);
 
   async function handleLogout() {
     setError('');
@@ -35,91 +21,116 @@ export default function Profile() {
     }
   }
 
-  async function handleProfileUpdate() {
-    console.log('Updating profile...');
+  useEffect(() => {
+    const loadFriendsData = async () => {
+      if (currentUser) {
+        try {
+          const [friendsData, requestsData] = await Promise.all([
+            getFriends(currentUser.uid),
+            getPendingRequests(currentUser.uid)
+          ]);
+          setFriends(friendsData);
+          setPendingRequests(requestsData);
+        } catch (error) {
+          console.error('Error loading friends data:', error);
+          setError('Failed to load friends data');
+        }
+      }
+    };
+    loadFriendsData();
+  }, [currentUser]);
+
+  const handleAcceptRequest = async (requesterId) => {
     try {
-      setLoading(true);
-      const updates = {};
-      
-      if (displayName || userProfile?.displayName) {
-        updates.displayName = displayName || userProfile?.displayName;
-      }
-      
-      if (bio || userProfile?.bio) {
-        updates.bio = bio || userProfile?.bio;
-      }
-
-      console.log('Update data:', updates);
-      
-      if (Object.keys(updates).length > 0) {
-        await updateUserProfile(currentUser.uid, updates);
-        await logActivity(currentUser.uid, 'profile_update', 'Updated profile information');
-        await refreshUserProfile();
-        setIsEditing(false);
-        console.log('Profile updated successfully');
-      } else {
-        console.log('No changes to update');
-      }
+      await acceptFriendRequest(currentUser.uid, requesterId);
+      const [friendsData, requestsData] = await Promise.all([
+        getFriends(currentUser.uid),
+        getPendingRequests(currentUser.uid)
+      ]);
+      setFriends(friendsData);
+      setPendingRequests(requestsData);
     } catch (error) {
-      console.error('Profile update error:', error);
-      setError('Failed to update profile');
-    } finally {
-      setLoading(false);
+      console.error('Error accepting friend request:', error);
+      setError('Failed to accept friend request');
     }
-  }
+  };
 
-  async function handlePictureUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
+  const handleRejectRequest = async (requesterId) => {
     try {
-      setLoading(true);
-      setError(''); // Clear any existing errors
-      
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        setError('Please select an image file');
-        return;
-      }
-      
-      // Validate file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image must be less than 5MB');
-        return;
-      }
-
-      console.log('Starting upload of file:', file.name);
-      await uploadProfilePicture(currentUser.uid, file);
-      console.log('Upload successful');
-      
-      await logActivity(currentUser.uid, 'profile_picture_update', 'Updated profile picture');
-      await refreshUserProfile();
-      
-      // Force a refresh of the profile photo
-      const img = document.querySelector('.profile-photo');
-      if (img) {
-        img.src = img.src.split('?')[0] + '?' + new Date().getTime();
-      }
+      await rejectFriendRequest(currentUser.uid, requesterId);
+      const requestsData = await getPendingRequests(currentUser.uid);
+      setPendingRequests(requestsData);
     } catch (error) {
-      console.error('Upload error:', error);
-      setError(error.message || 'Failed to upload profile picture');
-    } finally {
-      setLoading(false);
+      console.error('Error rejecting friend request:', error);
+      setError('Failed to reject friend request');
     }
-  }
+  };
 
-  async function handleDeleteAccount() {
-    try {
-      setLoading(true);
-      await deleteUserProfile(currentUser.uid);
-      await currentUser.delete();
-      navigate('/signup');
-    } catch (error) {
-      setError('Failed to delete account');
-    } finally {
-      setLoading(false);
-    }
-  }
+  const FriendsList = () => (
+    <div className="friends-section">
+      <h3>Connect with Friends</h3>
+      <div className="share-profile">
+        <button 
+          className="share-profile-button"
+          onClick={() => {
+            const shareLink = `${window.location.origin}/connect/${currentUser.uid}`;
+            navigator.clipboard.writeText(shareLink);
+            setShowShareLink(true);
+            setTimeout(() => setShowShareLink(false), 3000);
+          }}
+        >
+          Share Invite Link
+        </button>
+        {showShareLink && (
+          <div className="share-link-popup">Link copied to clipboard!</div>
+        )}
+      </div>
+      
+      {pendingRequests.length > 0 && (
+        <div className="pending-requests">
+          <h4>Pending Requests ({pendingRequests.length})</h4>
+          {pendingRequests.map(request => (
+            <div key={request.uid} className="request-item">
+              <div className="request-user">
+                <img src={request.photoURL || '/default-avatar.png'} alt={request.displayName} />
+                <span>{request.displayName || 'Anonymous'}</span>
+              </div>
+              <div className="request-actions">
+                <button 
+                  onClick={() => handleAcceptRequest(request.uid)}
+                  className="accept-button"
+                >
+                  Accept
+                </button>
+                <button 
+                  onClick={() => handleRejectRequest(request.uid)}
+                  className="reject-button"
+                >
+                  Reject
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="friends-list">
+        <h4>Your Friends ({friends.length})</h4>
+        {friends.length > 0 ? (
+          friends.map(friend => (
+            <div key={friend.uid} className="friend-item">
+              <img src={friend.photoURL || '/default-avatar.png'} alt={friend.displayName} />
+              <span>{friend.displayName || 'Anonymous'}</span>
+            </div>
+          ))
+        ) : (
+          <p className="no-friends">
+            You haven't connected with any friends yet. Share your profile link to get started!
+          </p>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="profile-container">
@@ -135,8 +146,8 @@ export default function Profile() {
               className="profile-photo"
               onError={(e) => {
                 console.error('Error loading profile image');
-                e.target.src = ''; // Clear the broken image
-                setError('Failed to load profile picture');
+                e.target.src = '/default-avatar.png';
+                setError('');
               }}
             />
           ) : (
@@ -144,96 +155,33 @@ export default function Profile() {
               {userProfile?.displayName?.[0] || currentUser.email[0]}
             </div>
           )}
-          <button 
-            onClick={() => fileInputRef.current.click()} 
-            className="change-photo-button"
-            disabled={loading}
-          >
-            {loading ? 'Uploading...' : 'Change Photo'}
-          </button>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handlePictureUpload}
-            accept="image/*"
-            style={{ display: 'none' }}
-          />
+          <div className="profile-actions">
+            <Link to="/edit-profile" className="edit-profile-link">
+              Edit Profile
+            </Link>
+            <Link to="/settings" className="settings-link">
+              Settings
+            </Link>
+          </div>
         </div>
 
-        <div className="info-group">
-          <label>Email</label>
-          <p>{currentUser.email}</p>
+        <div className="profile-details">
+          <div className="info-group">
+            <label>Email</label>
+            <p>{currentUser.email}</p>
+          </div>
+          <div className="info-group">
+            <label>Display Name</label>
+            <p>{userProfile?.displayName || 'Not set'}</p>
+          </div>
+          <div className="info-group">
+            <label>Bio</label>
+            <p>{userProfile?.bio || 'No bio yet'}</p>
+          </div>
         </div>
-        
-        {isEditing ? (
-          <>
-            <div className="info-group">
-              <label>Name</label>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder={userProfile?.displayName || 'Enter your name'}
-              />
-            </div>
-            <div className="info-group">
-              <label>Bio</label>
-              <textarea
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder={userProfile?.bio || 'Tell us about yourself'}
-              />
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="info-group">
-              <label>Name</label>
-              <p>{userProfile?.displayName || 'Not set'}</p>
-            </div>
-            <div className="info-group">
-              <label>Bio</label>
-              <p>{userProfile?.bio || 'No bio yet'}</p>
-            </div>
-          </>
-        )}
-
-        {isEditing ? (
-          <div className="button-group">
-            <button onClick={handleProfileUpdate} disabled={loading}>Save Changes</button>
-            <button onClick={() => setIsEditing(false)} className="cancel-button">
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button onClick={() => setIsEditing(true)} className="edit-button">
-            Edit Profile
-          </button>
-        )}
       </div>
 
-      <ActivityHistory />
-
-      <div className="danger-zone">
-        <h3>Danger Zone</h3>
-        {showDeleteConfirm ? (
-          <div className="delete-confirm">
-            <p>Are you sure you want to delete your account? This cannot be undone.</p>
-            <div className="button-group">
-              <button onClick={handleDeleteAccount} className="delete-button" disabled={loading}>
-                Yes, Delete My Account
-              </button>
-              <button onClick={() => setShowDeleteConfirm(false)} className="cancel-button">
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button onClick={() => setShowDeleteConfirm(true)} className="delete-button">
-            Delete Account
-          </button>
-        )}
-      </div>
+      <FriendsList />
 
       <button onClick={handleLogout} className="logout-button">
         Log Out
