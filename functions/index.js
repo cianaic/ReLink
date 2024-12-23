@@ -5,6 +5,14 @@ const axios = require('axios');
 const cors = require('cors')({ origin: true });
 const { Redis } = require('@upstash/redis');
 const functions = require('firebase-functions');
+const { v4: uuidv4 } = require('uuid');
+const multer = require('multer');
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -14,6 +22,97 @@ const redis = new Redis({
   url: functions.config().upstash.redis_url,
   token: functions.config().upstash.redis_token
 });
+
+// Configure storage bucket CORS
+const bucket = admin.storage().bucket();
+bucket.setCorsConfiguration([
+  {
+    origin: ['*'],
+    method: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    maxAgeSeconds: 3600,
+  },
+]);
+
+// Upload profile picture function
+exports.uploadProfilePicture = onRequest(
+  { 
+    cors: true,
+    maxInstances: 10
+  },
+  async (req, res) => {
+    // Set CORS headers
+    res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.set('Access-Control-Max-Age', '3600');
+
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
+      return;
+    }
+
+    // Use multer middleware
+    upload.single('file')(req, res, async (err) => {
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(400).json({ error: err.message });
+      }
+
+      try {
+        // Verify Firebase ID token
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        const idToken = authHeader.split('Bearer ')[1];
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        const userId = decodedToken.uid;
+
+        // Check if file exists in request
+        if (!req.file) {
+          return res.status(400).json({ error: 'No file provided' });
+        }
+
+        const file = req.file;
+        const fileExtension = file.originalname.split('.').pop();
+        const fileName = `profile-pictures/${userId}/${uuidv4()}.${fileExtension}`;
+
+        // Upload file to Firebase Storage
+        const fileBuffer = file.buffer;
+        const fileRef = bucket.file(fileName);
+        
+        await fileRef.save(fileBuffer, {
+          metadata: {
+            contentType: file.mimetype,
+            metadata: {
+              firebaseStorageDownloadTokens: uuidv4(),
+            }
+          }
+        });
+
+        // Get the download URL
+        const [downloadURL] = await fileRef.getSignedUrl({
+          action: 'read',
+          expires: '03-01-2500'
+        });
+
+        // Update user profile with new photo URL
+        const userRef = admin.firestore().collection('users').doc(userId);
+        await userRef.update({
+          photoURL: downloadURL,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+
+        res.json({ photoURL: downloadURL });
+      } catch (error) {
+        console.error('Error uploading profile picture:', error);
+        res.status(500).json({ error: error.message });
+      }
+    });
+  }
+);
 
 // Fetch URL metadata function
 exports.fetchUrlMetadata = onRequest(
