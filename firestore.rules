@@ -1,13 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth.uid == 'VGKFRWqEzyQMor0Xg4qvAyEWivA3';
+    }
+
     match /users/{userId} {
       // Allow anyone to read basic profile info
       allow read: if true;
       
-      // Allow users to write their own data and update friend-related arrays
+      // Allow users to write their own data and update friend-related arrays, or admin to write any user data
       allow write: if request.auth != null && (
         request.auth.uid == userId ||
+        isAdmin() ||
         (request.method == 'update' && 
           (
             'pendingRequests' in request.resource.data ||
@@ -42,19 +47,29 @@ service cloud.firestore {
     match /activities/{activityId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow update, delete: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
     }
     
     match /relinks/{document} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Allow users to modify their own posts or admin to modify any post
+      allow update, delete: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.authorId == request.auth.uid || 
+        isAdmin()
+      );
     }
     
     match /shared_relinks/{document} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Allow users to modify their own posts or admin to modify any post
+      allow update, delete: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.authorId == request.auth.uid || 
+        isAdmin()
+      );
     }
   }
 }

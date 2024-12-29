@@ -66,15 +66,30 @@ const hasPostedThisWeek = async (userId) => {
     // First check the user's profile for current week post
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
-    const currentWeekPost = userDoc.data()?.currentWeekPost;
+    
+    if (!userDoc.exists()) {
+      console.log('User document not found');
+      return false;
+    }
+
+    const userData = userDoc.data();
+    console.log('User data:', userData);
+    
+    const currentWeekPost = userData?.currentWeekPost;
+    console.log('Current week post from user profile:', currentWeekPost);
 
     if (currentWeekPost) {
       const postWeekStart = new Date(currentWeekPost.weekStart);
       const currentWeekStart = getWeekStartDate(new Date());
       
+      console.log('Comparing week starts:', {
+        postWeekStart: postWeekStart.toISOString(),
+        currentWeekStart: currentWeekStart.toISOString()
+      });
+      
       // If the stored post is from the current week
       if (postWeekStart.getTime() === currentWeekStart.getTime()) {
-        console.log('Found current week post in user profile:', currentWeekPost);
+        console.log('Found current week post in user profile');
         return true;
       }
     }
@@ -84,7 +99,10 @@ const hasPostedThisWeek = async (userId) => {
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 7);
 
-    console.log('Week range:', { weekStart, weekEnd });
+    console.log('Checking posts collection for week range:', { 
+      weekStart: weekStart.toISOString(), 
+      weekEnd: weekEnd.toISOString() 
+    });
 
     const q = query(
       collection(db, 'relinks'),
@@ -94,26 +112,31 @@ const hasPostedThisWeek = async (userId) => {
     );
 
     const snapshot = await getDocs(q);
-    console.log('Weekly post check found documents:', snapshot.docs.length);
-    
+    console.log('Posts found for current week:', snapshot.docs.length);
+
     if (!snapshot.empty) {
       // Update user profile with current week post info
       const post = snapshot.docs[0];
-      await updateDoc(userRef, {
+      const postData = {
         currentWeekPost: {
           postId: post.id,
           weekStart: weekStart.toISOString(),
           weekNumber: getWeekNumber(weekStart),
           updatedAt: new Date().toISOString()
         }
-      });
+      };
+      
+      console.log('Updating user profile with post data:', postData);
+      await updateDoc(userRef, postData);
       return true;
     }
 
+    console.log('No posts found for current week');
     return false;
   } catch (error) {
     console.error('Error checking weekly post:', error);
-    throw new Error('Failed to check weekly post limit');
+    // Don't throw the error, just return false to allow the user to post
+    return false;
   }
 };
 
@@ -169,7 +192,18 @@ const getFeedPage = async (page = 1, lastDoc = null, userIds = []) => {
       };
     }
 
-    const cacheKey = getCacheKey(userIds, page);
+    // Get the current user's ID (first ID in the array)
+    const currentUserId = userIds[0];
+    
+    // Check if user has shared this week's links
+    const hasShared = await hasPostedThisWeek(currentUserId);
+    console.log('User has shared this week:', hasShared);
+
+    // If user hasn't shared, only return their own posts
+    const queryUserIds = hasShared ? userIds : [currentUserId];
+    console.log('Using user IDs for query:', queryUserIds);
+
+    const cacheKey = getCacheKey(queryUserIds, page);
     console.log('Cache key:', cacheKey);
     const cachedData = cache.get(cacheKey);
     if (cachedData && Date.now() - cachedData.timestamp < CACHE_DURATION && page !== 1) {
@@ -180,7 +214,7 @@ const getFeedPage = async (page = 1, lastDoc = null, userIds = []) => {
     let q = collection(db, 'relinks');
     
     const constraints = [
-      where('userId', 'in', userIds),
+      where('authorId', 'in', queryUserIds),
       orderBy('createdAt', 'desc'),
       limit(POSTS_PER_PAGE)
     ];
@@ -199,11 +233,11 @@ const getFeedPage = async (page = 1, lastDoc = null, userIds = []) => {
       console.log('Processing post:', doc.id, 'data:', data);
       
       // Ensure links is always an array
-      const links = data.links || [];
+      const links = Array.isArray(data.links) ? data.links : [];
       console.log('Post links:', links);
 
       const authorInfo = {
-        authorId: data.userId,
+        authorId: data.authorId,
         authorName: data.authorName || 'Anonymous',
         authorPhotoURL: data.authorPhotoURL || null
       };
@@ -214,7 +248,8 @@ const getFeedPage = async (page = 1, lastDoc = null, userIds = []) => {
         ...authorInfo,
         createdAt: data.createdAt?.toDate(),
         dateStamp: data.dateStamp,
-        links: links
+        links: links,
+        isLocked: !hasShared && data.authorId !== currentUserId
       };
     });
 
@@ -222,7 +257,8 @@ const getFeedPage = async (page = 1, lastDoc = null, userIds = []) => {
 
     const result = {
       posts,
-      lastVisible: snapshot.docs[snapshot.docs.length - 1] || null
+      lastVisible: snapshot.docs[snapshot.docs.length - 1] || null,
+      hasShared
     };
 
     if (page !== 1) {

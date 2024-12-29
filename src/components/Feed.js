@@ -3,6 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import feedService from '../services/feedService';
 import { getFriends } from '../services/friendService';
 import { useLocation } from 'react-router-dom';
+import { analytics } from '../firebase';
+import { logEvent } from 'firebase/analytics';
 
 // Default avatar as a constant to avoid repeated string literals
 const DEFAULT_AVATAR = '/default-avatar.png';
@@ -20,6 +22,7 @@ const Feed = () => {
   const { currentUser } = useAuth();
   const location = useLocation();
   const [notification, setNotification] = useState(null);
+  const [hasShared, setHasShared] = useState(false);
 
   // Get the invite link for the current user
   const inviteLink = useMemo(() => {
@@ -60,6 +63,8 @@ const Feed = () => {
 
     try {
       setError(null);
+      setLoading(true);
+      
       const result = await feedService.getFeedPage(
         pageNum, 
         pageNum === 1 ? null : lastVisibleDoc, 
@@ -67,6 +72,14 @@ const Feed = () => {
       );
 
       console.log('Feed received posts:', result.posts);
+      setHasShared(result.hasShared);
+
+      // Track feed view event
+      logEvent(analytics, 'view_feed', {
+        page_number: pageNum,
+        posts_count: result.posts.length,
+        has_shared: result.hasShared
+      });
 
       // Process posts and preload images
       const processedPosts = result.posts
@@ -109,6 +122,10 @@ const Feed = () => {
     } catch (err) {
       console.error('Error loading posts:', err);
       setError('Failed to load posts. Please try again later.');
+      logEvent(analytics, 'feed_error', {
+        error_type: err.code || 'unknown',
+        error_message: err.message
+      });
     } finally {
       setLoading(false);
     }
@@ -138,8 +155,10 @@ const Feed = () => {
       console.log('Triggering initial post load');
       setLoading(true);
       loadPosts(1);
+    } else {
+      setLoading(false);
     }
-  }, [loadPosts, currentUser, userIds]);
+  }, [currentUser, userIds]);
 
   // Add event listener for feed reload
   useEffect(() => {
@@ -155,7 +174,7 @@ const Feed = () => {
 
     window.addEventListener('reloadFeed', handleReload);
     return () => window.removeEventListener('reloadFeed', handleReload);
-  }, [loadPosts, currentUser]);
+  }, [currentUser]);
 
   useEffect(() => {
     if (location.state?.showNotification) {
@@ -204,6 +223,14 @@ const Feed = () => {
     setDeletePostId(null);
   };
 
+  const handlePostClick = (post) => {
+    logEvent(analytics, 'select_content', {
+      content_type: 'post',
+      item_id: post.id
+    });
+    // Add your post click handling logic here
+  };
+
   console.log('Feed render state:', { 
     loading, 
     postsCount: posts.length, 
@@ -221,6 +248,33 @@ const Feed = () => {
         <div className="empty-feed">
           <h2>Please Sign In</h2>
           <p>Sign in to see your feed.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="feed-container">
+        <div className="loading">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!hasShared && currentUser) {
+    return (
+      <div className="feed-container">
+        <div className="locked-feed">
+          <h2>Your Feed is Locked</h2>
+          <div className="lock-icon">🔒</div>
+          <p>Share your weekly ReLinks to unlock your feed!</p>
+          <p>See what your friends are sharing by contributing your own curated links.</p>
+          <button 
+            onClick={() => window.location.href = '/vault'} 
+            className="share-to-unlock-button"
+          >
+            Share Your Links
+          </button>
         </div>
       </div>
     );
@@ -266,7 +320,7 @@ const Feed = () => {
           }
           
           return (
-            <div key={post.id} className="post-card">
+            <div key={post.id} className={`post-card ${post.isLocked ? 'locked' : ''}`}>
               <div className="post-header">
                 <div className="post-author-info">
                   <img 
@@ -291,16 +345,29 @@ const Feed = () => {
                 </div>
               </div>
               <div className="post-content">
-                {Array.isArray(post.links) && post.links.map((link, index) => (
-                  <div key={index} className="post-link">
-                    <a href={link.url} target="_blank" rel="noopener noreferrer">
-                      {link.title || link.url}
-                    </a>
-                    {link.comment && <p className="link-comment">{link.comment}</p>}
+                {post.isLocked ? (
+                  <div className="locked-content">
+                    <div className="lock-icon">🔒</div>
+                    <p>Share your weekly ReLinks to unlock this post!</p>
+                    <button 
+                      onClick={() => window.location.href = '/vault'} 
+                      className="share-to-unlock-button"
+                    >
+                      Share Your Links
+                    </button>
                   </div>
-                ))}
+                ) : (
+                  Array.isArray(post.links) && post.links.map((link, index) => (
+                    <div key={index} className="post-link">
+                      <a href={link.url} target="_blank" rel="noopener noreferrer">
+                        {link.title || link.url}
+                      </a>
+                      {link.comment && <p className="link-comment">{link.comment}</p>}
+                    </div>
+                  ))
+                )}
               </div>
-              {isOwnPost && (
+              {isOwnPost && !post.isLocked && (
                 <button
                   onClick={() => handleDeleteClick(post.id)}
                   className="post-menu-button"
