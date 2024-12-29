@@ -3059,3 +3059,265 @@ h3 {
 .invite-landing .back-button:hover {
   background: #444;
 }
+
+.locked-feed {
+  text-align: center;
+  padding: 2rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin: 2rem auto;
+  max-width: 600px;
+}
+
+.locked-feed .lock-icon {
+  font-size: 48px;
+  margin: 1rem 0;
+}
+
+.locked-feed h2 {
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.locked-feed p {
+  color: #666;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.share-to-unlock-button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.share-to-unlock-button:hover {
+  background: #0056b3;
+}
+
+.post-card.locked {
+  position: relative;
+  background: #f8f9fa;
+}
+
+.post-card.locked .post-content {
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+.locked-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 80%;
+  max-width: 400px;
+  z-index: 1;
+}
+
+.locked-content .lock-icon {
+  font-size: 32px;
+  margin-bottom: 1rem;
+}
+
+.locked-content p {
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+/* Admin Dashboard Styles */
+.admin-dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.admin-dashboard h2 {
+  margin-bottom: 32px;
+  color: #333;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.admin-dashboard section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-dashboard h3 {
+  color: #333;
+  font-size: 18px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.users-list, .posts-list {
+  display: grid;
+  gap: 20px;
+}
+
+.user-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 24px;
+  object-fit: cover;
+}
+
+.user-details h4 {
+  margin: 0 0 4px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.user-details p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.user-actions, .post-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.reset-posts-button {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reset-posts-button:hover {
+  background: #c82333;
+}
+
+.post-card {
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.post-info h4 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.post-info p {
+  margin: 0 0 12px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.post-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.post-link a {
+  color: #007bff;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.post-link a:hover {
+  text-decoration: underline;
+}
+
+.delete-post-button {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-post-button:hover {
+  background: #c82333;
+}
+
+.admin-dashboard.loading,
+.admin-dashboard.error {
+  text-align: center;
+  padding: 48px;
+  color: #666;
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard {
+    padding: 16px;
+  }
+
+  .user-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .user-actions {
+    width: 100%;
+  }
+
+  .reset-posts-button,
+  .delete-post-button {
+    width: 100%;
+  }
+}
+
+.admin-link {
+  background-color: #f44336;
+  color: white !important;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  margin-left: 1rem;
+  transition: background-color 0.2s;
+}
+
+.admin-link:hover {
+  background-color: #d32f2f;
+}
+
+.admin-link.active {
+  background-color: #d32f2f;
+}

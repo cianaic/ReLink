@@ -6,6 +6,8 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { format, setYear } from 'date-fns';
 import { getAuth } from 'firebase/auth';
 import feedService from '../services/feedService';
+import { analytics } from '../firebase';
+import { logEvent } from 'firebase/analytics';
 
 // Helper function to safely get hostname from URL
 const getHostname = (urlString) => {
@@ -157,6 +159,9 @@ export default function Vault() {
 
       const docRef = await addDoc(collection(db, "relinks"), {
         userId: currentUser.uid,
+        authorId: currentUser.uid,
+        authorName: currentUser.displayName || currentUser.email,
+        authorPhotoURL: currentUser.photoURL,
         url: entry.url,
         comment: entry.comment || '',
         preview: entry.preview || {
@@ -169,6 +174,13 @@ export default function Vault() {
       });
       
       console.log('Saved to Firestore with ID:', docRef.id);
+      
+      // Track link sharing event
+      logEvent(analytics, 'share_link', {
+        link_type: 'url',
+        has_comment: !!entry.comment,
+        has_preview: !!entry.preview
+      });
       
       if (docRef.id) {
         await loadSavedLinks(); // Load saved links first

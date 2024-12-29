@@ -6,8 +6,9 @@ import {
   onAuthStateChanged,
   signInWithPopup
 } from 'firebase/auth';
-import { auth, googleProvider } from '../firebase';
+import { auth, googleProvider, analytics } from '../firebase';
 import { saveUserProfile, getUserProfile } from '../utils/database';
+import { logEvent } from 'firebase/analytics';
 
 const AuthContext = createContext();
 
@@ -22,22 +23,31 @@ export function AuthProvider({ children }) {
 
   async function signup(email, password) {
     const result = await createUserWithEmailAndPassword(auth, email, password);
-    // Create initial user profile
+    // Create initial user profile with displayName from email
+    const displayName = email.split('@')[0]; // Use part before @ as default name
     await saveUserProfile(result.user.uid, {
       email: result.user.email,
+      displayName: result.user.displayName || displayName,
       createdAt: new Date().toISOString(),
-      displayName: result.user.displayName,
       photoURL: result.user.photoURL,
       lastSignIn: new Date().toISOString()
+    });
+    logEvent(analytics, 'sign_up', {
+      method: 'email'
     });
     return result;
   }
 
-  function login(email, password) {
-    return signInWithEmailAndPassword(auth, email, password);
+  async function login(email, password) {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    logEvent(analytics, 'login', {
+      method: 'email'
+    });
+    return result;
   }
 
-  function logout() {
+  async function logout() {
+    logEvent(analytics, 'logout');
     return signOut(auth);
   }
 
@@ -46,10 +56,13 @@ export function AuthProvider({ children }) {
     // Create/update user profile for Google sign-in
     await saveUserProfile(result.user.uid, {
       email: result.user.email,
-      displayName: result.user.displayName,
+      displayName: result.user.displayName || result.user.email.split('@')[0],
       photoURL: result.user.photoURL,
       lastSignIn: new Date().toISOString(),
       createdAt: new Date().toISOString()
+    });
+    logEvent(analytics, result.additionalUserInfo?.isNewUser ? 'sign_up' : 'login', {
+      method: 'google'
     });
     return result;
   }

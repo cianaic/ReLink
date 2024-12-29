@@ -11,6 +11,8 @@ import Connect from './components/Connect';
 import Settings from './components/Settings';
 import EditProfile from './components/EditProfile';
 import InviteLanding from './components/InviteLanding';
+import AdminDashboard from './components/AdminDashboard';
+import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
 // Configure future flags for React Router v7
@@ -41,6 +43,11 @@ const AppContent = () => {
           <Route path="/edit-profile" element={<EditProfile />} />
           <Route path="/connect/:userId" element={<Connect />} />
           <Route path="/invite/:userId" element={<InviteLanding />} />
+          <Route path="/admin" element={
+            <PrivateRoute>
+              <AdminDashboard />
+            </PrivateRoute>
+          } />
         </Routes>
       </main>
     </div>

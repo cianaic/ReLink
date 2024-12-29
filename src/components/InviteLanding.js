@@ -5,7 +5,6 @@ import { getPublicProfile } from '../services/userService';
 import { sendFriendRequest } from '../services/friendService';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { getAuth, fetchSignInMethodsForEmail } from 'firebase/auth';
 
 const InviteLanding = () => {
   const { userId } = useParams();
@@ -14,8 +13,6 @@ const InviteLanding = () => {
   const [inviter, setInviter] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [isExistingUser, setIsExistingUser] = useState(false);
-  const [checkingStatus, setCheckingStatus] = useState(true);
 
   useEffect(() => {
     const loadInviterProfile = async () => {
@@ -38,35 +35,41 @@ const InviteLanding = () => {
     loadInviterProfile();
   }, [userId]);
 
-  const handleQuickConnect = async () => {
+  const handleGoogleSignIn = async () => {
     try {
       setLoading(true);
+      setError('');
       const userCredential = await signInWithGoogle();
-      await sendFriendRequest(userCredential.user.uid, userId);
-      navigate('/feed', { 
-        state: { 
-          showNotification: true,
-          notificationMessage: `Friend request sent to ${inviter?.displayName}`
-        }
-      });
-    } catch (error) {
-      console.error('Error with quick connect:', error);
-      setError('Failed to connect. Please try again.');
-      setLoading(false);
-    }
-  };
+      
+      // Check if user already exists in Firestore
+      const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
+      const isExistingUser = userDoc.exists();
 
-  const handleNewSignUp = async () => {
-    try {
-      setLoading(true);
-      const userCredential = await signInWithGoogle();
-      await sendFriendRequest(userCredential.user.uid, userId);
-      navigate(`/connect/${userId}`, { 
-        state: { autoRequestSent: true }
-      });
+      // Send friend request automatically
+      try {
+        await sendFriendRequest(userCredential.user.uid, userId);
+        
+        if (isExistingUser) {
+          // If existing user, go to feed with success message
+          navigate('/feed', { 
+            state: { 
+              showNotification: true,
+              notificationMessage: `Friend request sent to ${inviter?.displayName}`
+            }
+          });
+        } else {
+          // If new user, go to connect page with success message
+          navigate(`/connect/${userId}`, { 
+            state: { autoRequestSent: true }
+          });
+        }
+      } catch (requestError) {
+        console.error('Error sending friend request:', requestError);
+        navigate('/feed');
+      }
     } catch (error) {
-      console.error('Error signing up:', error);
-      setError('Failed to sign up. Please try again.');
+      console.error('Error signing in:', error);
+      setError('Failed to sign in with Google');
       setLoading(false);
     }
   };
@@ -136,24 +139,14 @@ const InviteLanding = () => {
         <div className="invite-actions">
           <button 
             className="google-signin-button" 
-            onClick={handleNewSignUp}
+            onClick={handleGoogleSignIn}
             disabled={loading}
           >
             <img 
               src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
               alt="Google logo" 
             />
-            {loading ? 'Signing in...' : 'Sign up with Google'}
-          </button>
-          <div className="divider">
-            <span>Already have an account?</span>
-          </div>
-          <button 
-            className="quick-connect-button" 
-            onClick={handleQuickConnect}
-            disabled={loading}
-          >
-            Quick Connect
+            {loading ? 'Signing in...' : 'Continue with Google'}
           </button>
         </div>
       </div>
