@@ -1,721 +1,549 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, Timestamp, query, where, getDocs, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { format, setYear } from 'date-fns';
-import { getAuth } from 'firebase/auth';
-import feedService from '../services/feedService';
-import { analytics } from '../firebase';
-import { logEvent } from 'firebase/analytics';
+import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext';
+import { getLinkMetadata } from '../services/metadataService';
+import '../styles/Vault.css';
 
-// Helper function to safely get hostname from URL
-const getHostname = (urlString) => {
-  try {
-    const url = new URL(urlString);
-    return url.hostname;
-  } catch (error) {
-    return urlString;
-  }
+const getWeekNumber = (date) => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return { weekNo, year: date.getFullYear() };
 };
 
-// Helper function to safely create preview object
-const createPreview = (data) => {
-  return {
-    title: data?.preview?.title || data?.preview?.site || 'No Title',
-    description: data?.preview?.description || '',
-    image: data?.preview?.image || '',
-    url: data?.url || '',
-    author: data?.preview?.author || '',
-    site: data?.preview?.site || '',
-    date: data?.preview?.date || ''
-  };
+const formatMonth = (date) => {
+  return new Intl.DateTimeFormat('en-US', { month: 'short' }).format(date);
 };
 
-const fetchUrlMetadata = async (url) => {
-  try {
-    const auth = getAuth();
-    const idToken = await auth.currentUser.getIdToken();
-    const response = await fetch('https://us-central1-curate-f809d.cloudfunctions.net/fetchUrlMetadata', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`
-      },
-      body: JSON.stringify({ url })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    if (!data || !data.data) {
-      throw new Error('Invalid response format');
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Error fetching URL metadata:', error);
-    // Return basic preview data instead of throwing
-    return {
-      data: {
-        title: getHostname(url),
-        description: '',
-        image: '',
-        url: url
-      }
-    };
-  }
-};
-
-export default function Vault() {
-  const initialLinkEntries = [{ url: '', comment: '', title: '', preview: null }];
-  const [linkEntries, setLinkEntries] = useState(initialLinkEntries);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [savedLinks, setSavedLinks] = useState([]);
-  const [loading, setLoading] = useState(true);
+const Vault = () => {
   const { currentUser } = useAuth();
-  const [editingLink, setEditingLink] = useState(null);
-  const [openMenu, setOpenMenu] = useState(null);
-  const [selectedLinks, setSelectedLinks] = useState([]);
-  const [isSharing, setIsSharing] = useState(false);
-  const [showShareSuccess, setShowShareSuccess] = useState(false);
-  const [hasSharedThisWeek, setHasSharedThisWeek] = useState(false);
-  const [currentWeekPost, setCurrentWeekPost] = useState(null);
-
-  // Set dates for 2024
-  const now = new Date();
-  const year2024 = setYear(now, 2024);
-  const currentMonthKey = format(year2024, 'MMMM yyyy');
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingLinks, setLoadingLinks] = useState(true);
+  const [error, setError] = useState('');
+  const [preview, setPreview] = useState(null);
+  const [toReadLinks, setToReadLinks] = useState([]);
+  const [readLinks, setReadLinks] = useState([]);
+  const [comments, setComments] = useState({});
+  const [debouncedSaveTimeout, setDebouncedSaveTimeout] = useState(null);
+  const [manualTitle, setManualTitle] = useState('');
+  const [manualDescription, setManualDescription] = useState('');
+  const [isManualEntry, setIsManualEntry] = useState(false);
+  const [editingTitleId, setEditingTitleId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingComment, setEditingComment] = useState('');
+  const [editingDateId, setEditingDateId] = useState(null);
+  const [editingDate, setEditingDate] = useState('');
 
   useEffect(() => {
-    loadSavedLinks();
+    if (currentUser) {
+      loadLinks();
+    }
   }, [currentUser]);
 
-  // Update the check for this week's share status
+  // Initialize comments state when links load
   useEffect(() => {
-    const checkWeeklyShare = async () => {
-      if (currentUser) {
-        try {
-          const post = await feedService.getCurrentWeekPost(currentUser.uid);
-          setCurrentWeekPost(post);
-          setHasSharedThisWeek(!!post);
-        } catch (error) {
-          console.error('Error checking weekly post:', error);
-          setError('Failed to check weekly post status');
-        }
-      }
-    };
-    checkWeeklyShare();
-  }, [currentUser]);
+    const newComments = {};
+    toReadLinks.forEach(link => {
+      newComments[link.id] = link.comment || '';
+    });
+    setComments(newComments);
+  }, [toReadLinks]);
 
-  const loadSavedLinks = async () => {
-    try {
-      // Create start and end dates for December 2024
-      const startOfDecember = new Date(2024, 11, 1); // Month is 0-based, so 11 is December
-      const endOfDecember = new Date(2024, 11, 31, 23, 59, 59, 999);
-
-      const q = query(
-        collection(db, "relinks"),
-        where("userId", "==", currentUser.uid),
-        where("createdAt", ">=", Timestamp.fromDate(startOfDecember)),
-        where("createdAt", "<=", Timestamp.fromDate(endOfDecember)),
-        orderBy("createdAt", "desc")
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const links = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          preview: createPreview(data),
-          createdAt: data.createdAt.toDate()
-        };
-      });
-      setSavedLinks(links);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error loading saved links:', error);
-      setError('Failed to load saved links');
-      setLoading(false);
-    }
-  };
-
-  const saveLink = async (entry, index) => {
-    if (!entry.url || !entry.url.match(/^https?:\/\/.+/)) return;
-    
-    try {
-      // Validate URL before saving
-      try {
-        new URL(entry.url);
-      } catch (urlError) {
-        setError('Invalid URL format');
-        return;
-      }
-
-      const docRef = await addDoc(collection(db, "relinks"), {
-        userId: currentUser.uid,
-        authorId: currentUser.uid,
-        authorName: currentUser.displayName || currentUser.email,
-        authorPhotoURL: currentUser.photoURL,
-        url: entry.url,
-        comment: entry.comment || '',
-        preview: entry.preview || {
-          title: new URL(entry.url).hostname,
-          description: '',
-          image: '',
-          url: entry.url
-        },
-        createdAt: Timestamp.now()
-      });
-      
-      console.log('Saved to Firestore with ID:', docRef.id);
-      
-      // Track link sharing event
-      logEvent(analytics, 'share_link', {
-        link_type: 'url',
-        has_comment: !!entry.comment,
-        has_preview: !!entry.preview
-      });
-      
-      if (docRef.id) {
-        await loadSavedLinks(); // Load saved links first
-        const newEntry = { url: '', comment: '', title: '', preview: null };
-        const updatedEntries = [...linkEntries];
-        updatedEntries[index] = newEntry;
-        setLinkEntries(updatedEntries);
-        setSuccess('Link saved successfully!');
-      }
-    } catch (error) {
-      console.error('Save error:', error);
-      setError('Failed to save link. Please try again.');
-    }
-  };
-
-  const handleLinkChange = async (index, value) => {
-    try {
-      const updatedEntries = [...linkEntries];
-      updatedEntries[index] = {
-        ...updatedEntries[index],
-        url: value
-      };
-      setLinkEntries(updatedEntries);
-
-      // Check if it's a valid URL
-      if (value && value.match(/^https?:\/\/.+/)) {
-        try {
-          console.log('Fetching metadata for:', value);
-          const result = await fetchUrlMetadata(value);
-          console.log('API response:', result);
-          
-          if (result?.data) {
-            const preview = {
-              title: result.data.title || getHostname(value),
-              description: result.data.description || '',
-              image: result.data.image || '',
-              url: value
-            };
-            
-            console.log('Preview data:', preview);
-            
-            // Update the entry with preview but don't save yet
-            updatedEntries[index] = {
-              ...updatedEntries[index],
-              preview: preview
-            };
-            setLinkEntries([...updatedEntries]);
-          }
-        } catch (previewError) {
-          console.error('Preview API error:', previewError);
-          // Create basic preview if API fails
-          const basicPreview = {
-            title: getHostname(value),
-            description: '',
-            image: '',
-            url: value
-          };
-          
-          // Update the entry with basic preview but don't save yet
-          updatedEntries[index] = {
-            ...updatedEntries[index],
-            preview: basicPreview
-          };
-          setLinkEntries([...updatedEntries]);
-        }
-      } else if (value && !value.match(/^https?:\/\/.+/)) {
-        setError('Please enter a valid URL starting with http:// or https://');
-      } else if (!value) {
-        updatedEntries[index].preview = null;
-        setLinkEntries([...updatedEntries]);
-        setError('');
-      }
-    } catch (error) {
-      console.error('General error in handleLinkChange:', error);
-      setError('An unexpected error occurred. Please try again.');
-    }
-  };
-
-  const handleCommentChange = (index, value) => {
-    const updatedEntries = [...linkEntries];
-    updatedEntries[index] = {
-      ...updatedEntries[index],
-      comment: value
-    };
-    setLinkEntries(updatedEntries);
-  };
-
-  // Add cleanup effect to save any unsaved changes when leaving the page
+  // Cleanup timeouts
   useEffect(() => {
     return () => {
-      // Save any unsaved entries when component unmounts
-      linkEntries.forEach((entry, index) => {
-        if (entry.url && entry.preview) {
-          saveLink(entry, index);
+      if (debouncedSaveTimeout) {
+        clearTimeout(debouncedSaveTimeout);
+      }
+    };
+  }, [debouncedSaveTimeout]);
+
+  const loadLinks = async () => {
+    if (!currentUser) return;
+
+    setLoadingLinks(true);
+    setError('');
+
+    try {
+      const linksRef = collection(db, 'links');
+      const q = query(linksRef, where('userId', '==', currentUser.uid));
+      const querySnapshot = await getDocs(q);
+      
+      const toRead = [];
+      const read = [];
+      
+      querySnapshot.forEach((doc) => {
+        const link = { id: doc.id, ...doc.data() };
+        if (link.isRead) {
+          read.push(link);
+        } else {
+          toRead.push(link);
         }
       });
-    };
-  }, []);
+      
+      setToReadLinks(toRead);
+      setReadLinks(read);
+      setLoadingLinks(false);
+    } catch (err) {
+      console.error('Error loading links:', err);
+      setError('Failed to load links. Please try again later.');
+      setLoadingLinks(false);
+    }
+  };
 
-  const handleKeyDown = async (index, event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      const entry = linkEntries[index];
-      if (entry.url && entry.preview) {
-        try {
-          const docRef = await addDoc(collection(db, "relinks"), {
-            userId: currentUser.uid,
-            url: entry.url,
-            comment: entry.comment || '',
-            preview: entry.preview,
-            createdAt: Timestamp.now()
-          });
-          
-          if (docRef.id) {
-            const newEntry = { url: '', comment: '', title: '', preview: null };
-            const updatedEntries = [...linkEntries];
-            updatedEntries[index] = newEntry;
-            setLinkEntries(updatedEntries);
-            setSuccess('Link saved successfully!');
-            await loadSavedLinks();
-          }
-        } catch (error) {
-          console.error('Save error:', error);
-          setError('Failed to save link. Please try again.');
+  const handleUrlChange = async (e) => {
+    const newUrl = e.target.value;
+    setUrl(newUrl);
+    setError('');
+    setPreview(null);
+    setIsManualEntry(false);
+    setManualTitle('');
+    setManualDescription('');
+
+    if (newUrl && newUrl.match(/^https?:\/\/.+/)) {
+      try {
+        const metadata = await getLinkMetadata(newUrl);
+        setPreview(metadata);
+      } catch (err) {
+        console.error('Error fetching metadata:', err);
+        if (err.name === 'MetadataFetchError') {
+          setIsManualEntry(true);
         }
       }
     }
   };
 
-  const addNewLinkEntry = () => {
-    const newEntry = {
-      id: Date.now(), // Add unique ID for each entry
-      url: '',
-      comment: '',
-      title: '',
-      preview: null
-    };
-    setLinkEntries([newEntry, ...linkEntries]);
-  };
-
-  const removeLinkEntry = (index) => {
-    // Protect the last link (Link 1)
-    if (index !== linkEntries.length - 1) {
-      const updatedEntries = linkEntries.filter((_, i) => i !== index);
-      setLinkEntries(updatedEntries);
-    }
-  };
-
-  const handleDelete = async (linkId) => {
-    try {
-      console.log('Deleting link with ID:', linkId);
-      const linkRef = doc(db, "relinks", linkId);
-      await deleteDoc(linkRef);
-      console.log('Link deleted successfully');
-      await loadSavedLinks();
-      setSuccess('Link deleted successfully');
-    } catch (error) {
-      console.error('Delete error:', error);
-      setError('Failed to delete link');
-    }
-  };
-
-  const handleEdit = async (linkId, updates) => {
-    try {
-      console.log('Editing link with ID:', linkId);
-      const linkRef = doc(db, "relinks", linkId);
-      await updateDoc(linkRef, {
-        ...updates,
-        updatedAt: Timestamp.now()
-      });
-      console.log('Link updated successfully');
-      setEditingLink(null);
-      await loadSavedLinks();
-      setSuccess('Link updated successfully');
-    } catch (error) {
-      console.error('Edit error:', error);
-      setError('Failed to update link');
-    }
-  };
-
-  const handleShareMonthly = () => {
-    if (hasSharedThisWeek && currentWeekPost && Array.isArray(currentWeekPost.links)) {
-      // Pre-select the current week's links if editing
-      const currentLinks = currentWeekPost.links.map(link => {
-        const savedLink = savedLinks.find(saved => saved.url === link.url);
-        return savedLink || link;
-      });
-      setSelectedLinks(currentLinks);
-    } else {
-      setSelectedLinks([]);
-    }
-    setIsSharing(true);
-  };
-
-  const handleShareSubmit = async () => {
-    if (selectedLinks.length === 0 || selectedLinks.length > 5) {
-      setError('Please select between 1 and 5 links to share');
+  const handleSaveLink = async (e) => {
+    e.preventDefault();
+    if (!url || !url.match(/^https?:\/\/.+/)) {
+      setError('Please enter a valid URL starting with http:// or https://');
       return;
     }
 
-    try {
-      setError('');
-      const sharedLinks = selectedLinks.map(link => ({
-        url: link.url,
-        title: link.preview?.title || getHostname(link.url),
-        description: link.preview?.description || '',
-        image: link.preview?.image || '',
-        comment: link.comment || '',
-        author: link.preview?.author || '',
-        site: link.preview?.site || getHostname(link.url),
-        date: link.preview?.date || ''
-      }));
+    if (isManualEntry && !manualTitle.trim()) {
+      setError('Please enter a title for the link');
+      return;
+    }
 
-      const postData = {
+    setLoading(true);
+    setError('');
+
+    try {
+      const metadata = isManualEntry ? {
+        title: manualTitle.trim(),
+        description: manualDescription.trim(),
+        url,
+        image: ''
+      } : (preview || await getLinkMetadata(url));
+
+      const linkData = {
+        url,
+        comment: '',
         userId: currentUser.uid,
-        authorId: currentUser.uid,
-        authorName: currentUser.displayName || currentUser.email,
-        authorPhotoURL: currentUser.photoURL,
-        links: sharedLinks,
-        month: format(year2024, 'MMMM yyyy')
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        title: metadata.title,
+        description: metadata.description || '',
+        image: metadata.image || '',
       };
 
-      if (hasSharedThisWeek && currentWeekPost) {
-        await feedService.updatePost(postData);
-        setSuccess('Links updated successfully!');
-      } else {
-        await feedService.createPost(postData);
-        setSuccess('Links shared successfully!');
-        setHasSharedThisWeek(true);
-      }
-
-      setIsSharing(false);
-      setSelectedLinks([]);
-      setShowShareSuccess(true);
-      setTimeout(() => setShowShareSuccess(false), 3000);
+      await addDoc(collection(db, 'links'), linkData);
       
-      // Refresh current week's post
-      const updatedPost = await feedService.getCurrentWeekPost(currentUser.uid);
-      setCurrentWeekPost(updatedPost);
-      
-      if (window.location.pathname === '/feed') {
-        window.dispatchEvent(new CustomEvent('reloadFeed'));
-      }
-    } catch (error) {
-      console.error('Error sharing links:', error);
-      setError('Failed to share links: ' + error.message);
+      setUrl('');
+      setPreview(null);
+      setManualTitle('');
+      setManualDescription('');
+      setIsManualEntry(false);
+      await loadLinks();
+    } catch (err) {
+      console.error('Error saving link:', err);
+      setError('Failed to save link. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const toggleLinkSelection = (link) => {
-    if (selectedLinks.find(l => l.id === link.id)) {
-      setSelectedLinks(selectedLinks.filter(l => l.id !== link.id));
-    } else if (selectedLinks.length < 5) {
-      setSelectedLinks([...selectedLinks, link]);
-    } else {
-      setError('You can only select up to 5 links');
+  const handleCommentChange = (linkId, newComment) => {
+    // Update local state immediately for smooth typing
+    setComments(prev => ({ ...prev, [linkId]: newComment }));
+
+    // Clear any existing timeout
+    if (debouncedSaveTimeout) {
+      clearTimeout(debouncedSaveTimeout);
+    }
+
+    // Set new timeout for saving to Firestore
+    const timeoutId = setTimeout(async () => {
+      try {
+        const linkRef = doc(db, 'links', linkId);
+        await updateDoc(linkRef, { comment: newComment });
+      } catch (err) {
+        console.error('Error saving comment:', err);
+        setError('Failed to save comment.');
+      }
+    }, 2000); // Increased debounce time to 2 seconds
+
+    setDebouncedSaveTimeout(timeoutId);
+  };
+
+  const handleToggleRead = async (linkId, currentReadState) => {
+    try {
+      const linkRef = doc(db, 'links', linkId);
+      await updateDoc(linkRef, {
+        isRead: !currentReadState
+      });
+      await loadLinks();
+    } catch (err) {
+      console.error('Error updating link:', err);
+      setError('Failed to update link status.');
     }
   };
 
-  // Add event listener for post deletion
-  useEffect(() => {
-    const handlePostDeleted = () => {
-      setHasSharedThisWeek(false);
-      setCurrentWeekPost(null);
-    };
+  const handleDeleteLink = async (linkId) => {
+    try {
+      await deleteDoc(doc(db, 'links', linkId));
+      await loadLinks();
+    } catch (err) {
+      console.error('Error deleting link:', err);
+      setError('Failed to delete link.');
+    }
+  };
 
-    window.addEventListener('weeklyPostDeleted', handlePostDeleted);
-    return () => window.removeEventListener('weeklyPostDeleted', handlePostDeleted);
-  }, []);
+  const handleEditTitle = async (linkId, newTitle) => {
+    if (!newTitle.trim()) return;
+    
+    try {
+      const linkRef = doc(db, 'links', linkId);
+      await updateDoc(linkRef, { title: newTitle.trim() });
+      await loadLinks();
+      setEditingTitleId(null);
+      setEditingTitle('');
+    } catch (err) {
+      console.error('Error updating title:', err);
+      setError('Failed to update title.');
+    }
+  };
 
-  return (
-    <div className="vault-container">
-      <h2>Your Link Vault</h2>
-      {error && <div className="error">{error}</div>}
-      {success && <div className="success">{success}</div>}
+  const startEditingTitle = (linkId, currentTitle) => {
+    setEditingTitleId(linkId);
+    setEditingTitle(currentTitle);
+  };
+
+  const handleEditComment = async (linkId, newComment) => {
+    try {
+      const linkRef = doc(db, 'links', linkId);
+      await updateDoc(linkRef, { comment: newComment.trim() });
+      await loadLinks();
+      setEditingCommentId(null);
+      setEditingComment('');
+    } catch (err) {
+      console.error('Error updating comment:', err);
+      setError('Failed to update comment.');
+    }
+  };
+
+  const startEditingComment = (linkId, currentComment) => {
+    setEditingCommentId(linkId);
+    setEditingComment(currentComment || '');
+  };
+
+  const handleEditDate = async (linkId, newDate) => {
+    try {
+      const linkRef = doc(db, 'links', linkId);
+      const newDateISO = new Date(newDate).toISOString();
+      await updateDoc(linkRef, { createdAt: newDateISO });
       
-      <div>
-        <div className="vault-header">
-          <h4 className="month-header">{currentMonthKey}</h4>
-        </div>
-        <div className="share-button-container">
-          <button 
-            className={`share-monthly-button ${hasSharedThisWeek ? 'shared' : ''}`}
-            onClick={handleShareMonthly}
-          >
-            {hasSharedThisWeek ? 'Edit ReLink' : 'Share ReLink'}
-          </button>
-        </div>
-      </div>
+      // Update state locally instead of reloading
+      setReadLinks(prevLinks => {
+        const updatedLinks = prevLinks.map(link => 
+          link.id === linkId ? { ...link, createdAt: newDateISO } : link
+        );
+        return updatedLinks;
+      });
+      
+      setEditingDateId(null);
+      setEditingDate('');
+    } catch (err) {
+      console.error('Error updating date:', err);
+      setError('Failed to update date.');
+    }
+  };
 
-      <div className="add-links-section">
-        {[...linkEntries].map((entry, index) => (
-          <div key={entry.id || index} className="link-entry">
-            {index !== linkEntries.length - 1 && (
-              <button
-                type="button"
-                className="remove-link-button"
-                onClick={() => removeLinkEntry(index)}
-              >
-                ×
-              </button>
-            )}
-            <div className="form-group">
-              <label>New Link</label>
-              <input
-                type="url"
-                value={entry.url}
-                onChange={(e) => handleLinkChange(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
-                onPaste={(e) => {
-                  e.preventDefault();
-                  const pastedText = e.clipboardData.getData('text');
-                  handleLinkChange(index, pastedText);
-                }}
-                placeholder="https://"
-              />
-              {entry.preview && (
-                <div className="link-preview">
-                  <a href={entry.url} target="_blank" rel="noopener noreferrer" className="preview-title">
-                    {entry.preview.title}
-                  </a>
-                  {entry.preview.image && (
-                    <div className="preview-image">
-                      <img src={entry.preview.image} alt={entry.preview.title || 'Link preview'} />
-                    </div>
-                  )}
-                  {entry.preview.description && (
-                    <p className="preview-description">{entry.preview.description}</p>
-                  )}
-                  <div className="preview-meta">
-                    {entry.preview.site && (
-                      <span className="preview-site">{entry.preview.site}</span>
-                    )}
-                    {entry.preview.author && (
-                      <span className="preview-author">By {entry.preview.author}</span>
-                    )}
-                    {entry.preview.date && (
-                      <span className="preview-date">{entry.preview.date}</span>
-                    )}
-                  </div>
+  const startEditingDate = (linkId, currentDate) => {
+    setEditingDateId(linkId);
+    // Format date to YYYY-MM-DD for input
+    const date = new Date(currentDate);
+    const formattedDate = date.toISOString().split('T')[0];
+    setEditingDate(formattedDate);
+  };
+
+  const groupLinksByWeek = (links) => {
+    const grouped = {};
+    links.forEach(link => {
+      const date = new Date(link.createdAt);
+      const { weekNo, year } = getWeekNumber(date);
+      const key = `${year}-${weekNo}`;
+      if (!grouped[key]) {
+        grouped[key] = {
+          weekNo,
+          year,
+          links: []
+        };
+      }
+      grouped[key].links.push(link);
+    });
+    
+    // Convert to array and sort by date (newest first)
+    return Object.values(grouped)
+      .sort((a, b) => {
+        if (a.year !== b.year) return b.year - a.year;
+        return b.weekNo - a.weekNo;
+      });
+  };
+
+  const renderLinkCard = (link) => (
+    <div key={link.id} className="link-card">
+      <div className="link-header">
+        <div className="link-title-group">
+          {editingTitleId === link.id ? (
+            <div className="edit-title-container">
+              <div className="edit-title-wrapper">
+                <input
+                  type="text"
+                  value={editingTitle}
+                  onChange={(e) => setEditingTitle(e.target.value)}
+                  className="edit-title-input"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleEditTitle(link.id, editingTitle);
+                    } else if (e.key === 'Escape') {
+                      setEditingTitleId(null);
+                      setEditingTitle('');
+                    }
+                  }}
+                  autoFocus
+                />
+                <div className="edit-title-actions">
+                  <button
+                    onClick={() => handleEditTitle(link.id, editingTitle)}
+                    className="edit-title-save"
+                    title="Save (Enter)"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingTitleId(null);
+                      setEditingTitle('');
+                    }}
+                    className="edit-title-cancel"
+                    title="Cancel (Esc)"
+                  >
+                    ✕
+                  </button>
                 </div>
-              )}
+              </div>
+              <a href={link.url} target="_blank" rel="noopener noreferrer" className="link-url">
+                {link.url}
+              </a>
             </div>
-            <div className="form-group">
-              <textarea
-                value={entry.comment}
-                onChange={(e) => handleCommentChange(index, e.target.value)}
-                placeholder="Share your thoughts about this link..."
-              />
-            </div>
-            {entry.preview && (
-              <button
-                type="button"
-                className="save-link-button"
-                onClick={() => saveLink(entry, index)}
+          ) : (
+            <>
+              <div 
+                className="title-display"
+                onClick={() => startEditingTitle(link.id, link.title)}
+                title="Click to edit title"
               >
-                Save Link
-              </button>
-            )}
+                <h3 className="link-title">
+                  {link.title}
+                </h3>
+              </div>
+              <a href={link.url} target="_blank" rel="noopener noreferrer" className="link-url">
+                {link.url}
+              </a>
+            </>
+          )}
+        </div>
+        {editingDateId === link.id ? (
+          <div className="edit-date-container">
+            <input
+              type="date"
+              value={editingDate}
+              onChange={(e) => setEditingDate(e.target.value)}
+              className="edit-date-input"
+              onBlur={() => {
+                if (editingDate) {
+                  handleEditDate(link.id, editingDate);
+                } else {
+                  setEditingDateId(null);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setEditingDateId(null);
+                  setEditingDate('');
+                }
+              }}
+              autoFocus
+            />
           </div>
-        ))}
+        ) : (
+          <span 
+            className="link-date"
+            onClick={() => startEditingDate(link.id, link.createdAt)}
+            title="Click to edit date"
+          >
+            {new Date(link.createdAt).toLocaleDateString()}
+          </span>
+        )}
       </div>
-
-      {isSharing && (
-        <div className="sharing-modal">
-          <div className="sharing-modal-content">
-            <h3>Select up to 5 links to share</h3>
-            <p>Selected: {selectedLinks.length}/5</p>
-            <div className="selected-links">
-              {savedLinks.map((link) => (
-                <div 
-                  key={link.id} 
-                  className={`link-selection ${selectedLinks.find(l => l.id === link.id) ? 'selected' : ''}`}
-                  onClick={() => toggleLinkSelection(link)}
-                >
-                  <div className="link-preview">
-                    <span className="preview-title">{link.preview.title}</span>
-                    {link.comment && <p className="preview-comment">{link.comment}</p>}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="sharing-actions">
-              <button 
-                className="cancel-share" 
+      <div className="link-content">
+        {editingCommentId === link.id ? (
+          <div className="edit-comment-container">
+            <textarea
+              value={editingComment}
+              onChange={(e) => setEditingComment(e.target.value)}
+              className="edit-comment-input"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.metaKey) {
+                  handleEditComment(link.id, editingComment);
+                } else if (e.key === 'Escape') {
+                  setEditingCommentId(null);
+                  setEditingComment('');
+                }
+              }}
+              placeholder="Add your thoughts..."
+              autoFocus
+            />
+            <div className="edit-comment-actions">
+              <button
+                onClick={() => handleEditComment(link.id, editingComment)}
+                className="edit-comment-save"
+                title="Save (⌘ + Enter)"
+              >
+                Save
+              </button>
+              <button
                 onClick={() => {
-                  setIsSharing(false);
-                  setSelectedLinks([]);
+                  setEditingCommentId(null);
+                  setEditingComment('');
                 }}
+                className="edit-comment-cancel"
+                title="Cancel (Esc)"
               >
                 Cancel
               </button>
-              <button 
-                className="confirm-share"
-                onClick={handleShareSubmit}
-                disabled={selectedLinks.length === 0 || selectedLinks.length > 5}
-              >
-                Share {selectedLinks.length} Links
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div 
+            className="comment-display"
+            onClick={() => startEditingComment(link.id, link.comment)}
+            title={link.comment ? "Click to edit comment" : "Click to add a comment"}
+          >
+            {link.comment ? (
+              <p className="link-comment">{link.comment}</p>
+            ) : (
+              <p className="no-comment">Add your thoughts...</p>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="link-footer">
+        <button
+          className={`link-button ${link.isRead ? 'mark-as-unread' : 'mark-as-read'}`}
+          onClick={() => handleToggleRead(link.id, link.isRead)}
+        >
+          {link.isRead ? 'Move to To Link' : 'Move to Linked'}
+        </button>
+      </div>
+    </div>
+  );
 
-      <div className="month-section">
-        <div className="month-links">
-          {loading ? (
-            <div className="loading">Loading saved links...</div>
-          ) : savedLinks.length > 0 ? (
-            savedLinks.map((link) => (
-              <div key={link.id} className={`saved-link-entry ${editingLink === link.id ? 'edit-mode' : ''}`}>
-                <div className="link-settings">
-                  <button
-                    className="link-settings-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenMenu(openMenu === link.id ? null : link.id);
-                    }}
-                  >
-                    ⋮
-                  </button>
-                  {openMenu === link.id && (
-                    <div className="link-settings-menu">
-                      <button onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingLink(link.id);
-                        setOpenMenu(null);
-                      }}>
-                        ✏️ Edit
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div className="link-preview">
-                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="preview-title">
-                    {link.preview.title}
-                  </a>
-                  {link.preview.image && (
-                    <div className="preview-image">
-                      <img src={link.preview.image} alt={link.preview.title || 'Link preview'} />
-                    </div>
-                  )}
-                  {link.preview.description && (
-                    <p className="preview-description">{link.preview.description}</p>
-                  )}
-                  <div className="preview-meta">
-                    {link.preview.site && (
-                      <span className="preview-site">{link.preview.site}</span>
-                    )}
-                    {link.preview.author && (
-                      <span className="preview-author">By {link.preview.author}</span>
-                    )}
-                    <span className="preview-date">
-                      {format(link.createdAt, 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                  {link.comment && (
-                    <p className="saved-comment">{link.comment}</p>
-                  )}
-                </div>
-                {editingLink === link.id && (
-                  <div className="edit-form">
-                    <input
-                      type="url"
-                      defaultValue={link.url}
-                      placeholder="URL"
-                      id={`edit-url-${link.id}`}
-                    />
-                    <textarea
-                      defaultValue={link.comment}
-                      placeholder="Your thoughts about this link..."
-                      id={`edit-comment-${link.id}`}
-                    />
-                    <div className="edit-form-actions">
-                      <button 
-                        className="cancel" 
-                        onClick={() => setEditingLink(null)}
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        className="save" 
-                        onClick={async () => {
-                          try {
-                            const newUrl = document.getElementById(`edit-url-${link.id}`).value;
-                            const newComment = document.getElementById(`edit-comment-${link.id}`).value;
-                            
-                            if (!newUrl || !newUrl.match(/^https?:\/\/.+/)) {
-                              setError('Please enter a valid URL starting with http:// or https://');
-                              return;
-                            }
+  if (!currentUser) {
+    return <div className="vault-container">Please sign in to access your vault.</div>;
+  }
 
-                            console.log('Fetching metadata for edited URL:', newUrl);
-                            const result = await fetchUrlMetadata(newUrl);
-                            console.log('Metadata result:', result);
+  return (
+    <div className="vault-container">
+      <div className="add-links-section">
+        <h2>Add New Link</h2>
+        <form onSubmit={handleSaveLink} className="form-group">
+          <div className="link-entry">
+            <input
+              type="url"
+              value={url}
+              onChange={handleUrlChange}
+              placeholder="Enter URL"
+              className="link-input"
+              required
+            />
+            {isManualEntry && (
+              <>
+                <input
+                  type="text"
+                  value={manualTitle}
+                  onChange={(e) => setManualTitle(e.target.value)}
+                  placeholder="Enter title"
+                  className="link-input"
+                  required
+                />
+                <textarea
+                  value={manualDescription}
+                  onChange={(e) => setManualDescription(e.target.value)}
+                  placeholder="Enter description (optional)"
+                  className="comment-input"
+                />
+              </>
+            )}
+          </div>
+          {error && <p className="error-message">{error}</p>}
+          <button
+            type="submit"
+            className="save-link-button"
+            disabled={loading || !url || (isManualEntry && !manualTitle.trim())}
+          >
+            {loading ? 'Saving...' : 'Save Link'}
+          </button>
+        </form>
+      </div>
 
-                            const preview = {
-                              title: result.data.title || getHostname(newUrl),
-                              description: result.data.description || '',
-                              image: result.data.image || '',
-                              url: newUrl
-                            };
-                            
-                            await handleEdit(link.id, {
-                              url: newUrl,
-                              comment: newComment,
-                              preview: preview
-                            });
-                          } catch (error) {
-                            console.error('Edit save error:', error);
-                            setError('Failed to update link: ' + error.message);
-                          }
-                        }}
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))
+      <div className="links-section">
+        <h2>Link Queue</h2>
+        <div className="link-list">
+          {loadingLinks ? (
+            <p>Loading links...</p>
+          ) : toReadLinks.length > 0 ? (
+            toReadLinks.map(renderLinkCard)
           ) : (
-            <div>No links saved yet</div>
+            <p>No links in queue</p>
           )}
         </div>
       </div>
 
-      {showShareSuccess && (
-        <div className="share-success-popup">
-          <div className="share-success-content">
-            <div className="success-icon">✓</div>
-            <p>Links shared successfully!</p>
-          </div>
+      <div className="links-section">
+        <h2>Linked</h2>
+        <div className="link-list">
+          {loadingLinks ? (
+            <p>Loading links...</p>
+          ) : readLinks.length > 0 ? (
+            groupLinksByWeek(readLinks).map(group => (
+              <div key={`${group.year}-${group.weekNo}`} className="week-group">
+                <h3 className="week-header">Week {group.weekNo}, {group.year}</h3>
+                {group.links.map(renderLinkCard)}
+              </div>
+            ))
+          ) : (
+            <p>No linked links</p>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
-} 
+};
+
+export default Vault; 
