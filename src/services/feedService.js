@@ -313,12 +313,52 @@ const toggleLike = async (postId, userId) => {
   }
 };
 
+const deleteComment = async (postId, commentId, userId) => {
+  try {
+    const postRef = doc(db, 'relinks', postId);
+    const postDoc = await getDoc(postRef);
+    
+    if (!postDoc.exists()) {
+      throw new Error('Post not found');
+    }
+
+    const post = postDoc.data();
+    const comments = post.comments || [];
+    const comment = comments.find(c => c.id === commentId);
+
+    if (!comment) {
+      throw new Error('Comment not found');
+    }
+
+    // Only allow comment author or post author to delete the comment
+    if (comment.userId !== userId && post.userId !== userId) {
+      throw new Error('Not authorized to delete this comment');
+    }
+
+    // Remove the comment
+    const updatedComments = comments.filter(c => c.id !== commentId);
+    await updateDoc(postRef, { comments: updatedComments });
+
+    // Clear cache for this post
+    const cacheKeys = Array.from(cache.keys());
+    cacheKeys.forEach(key => {
+      if (key.includes(post.userId)) {
+        cache.delete(key);
+      }
+    });
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    throw error;
+  }
+};
+
 const feedService = {
   hasPostedThisMonth,
   createPost,
   getFeedPosts,
   deletePost,
-  toggleLike
+  toggleLike,
+  deleteComment
 };
 
 export default feedService; 

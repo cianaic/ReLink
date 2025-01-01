@@ -3,12 +3,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { getFriends } from '../services/friendService';
 import EditProfile from './EditProfile';
+import feedService from '../services/feedService';
 
 const Profile = () => {
   const { currentUser, userProfile, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [relinks, setRelinks] = useState([]);
+  const [loadingRelinks, setLoadingRelinks] = useState(true);
 
   useEffect(() => {
     const loadFriends = async () => {
@@ -24,7 +27,22 @@ const Profile = () => {
       }
     };
 
+    const loadRelinks = async () => {
+      if (currentUser) {
+        try {
+          setLoadingRelinks(true);
+          const { posts } = await feedService.getFeedPosts(1, null, [currentUser.uid]);
+          setRelinks(posts);
+        } catch (error) {
+          console.error('Error loading ReLinks:', error);
+        } finally {
+          setLoadingRelinks(false);
+        }
+      }
+    };
+
     loadFriends();
+    loadRelinks();
   }, [currentUser]);
 
   if (!currentUser) {
@@ -48,7 +66,7 @@ const Profile = () => {
   return (
     <>
       <div className="max-w-4xl mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-8">
           {/* Profile Section */}
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex justify-between items-start mb-6">
@@ -154,6 +172,52 @@ const Profile = () => {
                   ))
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Historic ReLinks Section */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">Your ReLinks</h2>
+            
+            <div className="space-y-6">
+              {loadingRelinks ? (
+                <p className="text-gray-500">Loading ReLinks...</p>
+              ) : relinks.length === 0 ? (
+                <p className="text-gray-500">No ReLinks shared yet. Share your first monthly ReLink from your vault!</p>
+              ) : (
+                relinks.map((relink) => (
+                  <div key={relink.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-lg font-medium text-gray-900">
+                        {relink.monthName} {relink.year} ReLink
+                      </h3>
+                      <span className="text-sm text-gray-500">
+                        {new Date(relink.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    
+                    {relink.monthlyLinks && (
+                      <div className="space-y-3">
+                        {relink.monthlyLinks.map((link, index) => (
+                          <div key={index} className="bg-gray-50 rounded p-3">
+                            <a 
+                              href={link.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="font-medium text-primary hover:text-primary-hover"
+                            >
+                              {link.title}
+                            </a>
+                            {link.comment && (
+                              <p className="text-sm text-gray-600 mt-1">{link.comment}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

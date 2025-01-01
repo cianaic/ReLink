@@ -19,6 +19,7 @@ const Feed = () => {
   const [deletingPost, setDeletingPost] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [likingPost, setLikingPost] = useState(null);
+  const [deletingComment, setDeletingComment] = useState(null);
 
   useEffect(() => {
     const loadConnections = async () => {
@@ -170,27 +171,50 @@ const Feed = () => {
     }
   };
 
+  const handleDeleteComment = async (postId, commentId) => {
+    try {
+      setDeletingComment(commentId);
+      await feedService.deleteComment(postId, commentId, currentUser.uid);
+      
+      // Update local state
+      setPosts(posts.map(post => {
+        if (post.id === postId) {
+          return {
+            ...post,
+            comments: (post.comments || []).filter(c => c.id !== commentId)
+          };
+        }
+        return post;
+      }));
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      alert('Failed to delete comment. Please try again.');
+    } finally {
+      setDeletingComment(null);
+    }
+  };
+
   const renderPost = (post) => (
-    <div key={post.id} className="bg-white rounded-lg shadow p-6 mb-6">
-      <div className="flex items-center gap-3 mb-4">
+    <div key={post.id} className="bg-white rounded-lg shadow p-4 sm:p-6 mb-4 sm:mb-6">
+      <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
         {post.authorPhotoURL ? (
-          <img src={post.authorPhotoURL} alt="" className="w-10 h-10 rounded-full" />
+          <img src={post.authorPhotoURL} alt="" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" />
         ) : (
-          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full flex items-center justify-center">
             <span className="text-gray-600 font-medium">
               {post.authorName?.[0] || 'A'}
             </span>
           </div>
         )}
-        <div className="flex-1">
-          <p className="font-medium text-gray-900">{post.authorName}</p>
-          <p className="text-sm text-gray-500">
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{post.authorName}</p>
+          <p className="text-xs sm:text-sm text-gray-500">
             {new Date(post.createdAt).toLocaleDateString()}
           </p>
         </div>
         {post.type === 'monthly' && (
           <div className="text-right">
-            <h3 className="text-lg font-semibold text-primary">
+            <h3 className="text-sm sm:text-lg font-semibold text-primary">
               {post.monthName} {post.year} ReLink
             </h3>
           </div>
@@ -199,13 +223,13 @@ const Feed = () => {
           <button
             onClick={() => setConfirmDelete(post.id)}
             disabled={deletingPost === post.id}
-            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+            className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 transition-colors"
             title="Delete post"
           >
             {deletingPost === post.id ? (
               <span className="loading">...</span>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
             )}
@@ -214,51 +238,51 @@ const Feed = () => {
       </div>
 
       {post.type === 'monthly' && post.monthlyLinks ? (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {post.monthlyLinks.map((link, index) => (
-            <div key={index} className="p-4 bg-gray-50 rounded-lg">
+            <div key={index} className="p-3 sm:p-4 bg-gray-50 rounded-lg">
               <a 
                 href={link.url} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="font-medium text-blue-600 hover:underline"
+                className="block font-medium text-blue-600 hover:underline text-sm sm:text-base"
               >
                 {link.title}
               </a>
               {link.description && (
-                <p className="mt-1 text-gray-600 text-sm">{link.description}</p>
+                <p className="mt-1 text-gray-600 text-xs sm:text-sm">{link.description}</p>
               )}
               {link.comment && (
-                <p className="mt-2 text-gray-700 italic">{link.comment}</p>
+                <p className="mt-2 text-gray-700 italic text-xs sm:text-sm">{link.comment}</p>
               )}
             </div>
           ))}
         </div>
       ) : (
-        <div className="p-4 bg-gray-50 rounded-lg">
+        <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
           <a 
             href={post.url} 
             target="_blank" 
             rel="noopener noreferrer"
-            className="font-medium text-blue-600 hover:underline"
+            className="block font-medium text-blue-600 hover:underline text-sm sm:text-base"
           >
             {post.title}
           </a>
           {post.description && (
-            <p className="mt-1 text-gray-600 text-sm">{post.description}</p>
+            <p className="mt-1 text-gray-600 text-xs sm:text-sm">{post.description}</p>
           )}
           {post.comment && (
-            <p className="mt-2 text-gray-700 italic">{post.comment}</p>
+            <p className="mt-2 text-gray-700 italic text-xs sm:text-sm">{post.comment}</p>
           )}
         </div>
       )}
 
-      <div className="mt-4 pt-4 border-t">
-        <div className="flex items-center mb-4">
+      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t">
+        <div className="flex items-center mb-3 sm:mb-4">
           <button
             onClick={() => handleLikePost(post.id)}
             disabled={likingPost === post.id}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors text-sm sm:text-base ${
               (post.likes || []).includes(currentUser.uid)
                 ? 'text-primary bg-primary bg-opacity-10'
                 : 'text-gray-500 hover:bg-gray-100'
@@ -269,7 +293,7 @@ const Feed = () => {
           >
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
-              className={`h-5 w-5 ${likingPost === post.id ? 'animate-pulse' : ''}`}
+              className={`h-4 w-4 sm:h-5 sm:w-5 ${likingPost === post.id ? 'animate-pulse' : ''}`}
               fill={(post.likes || []).includes(currentUser.uid) ? 'currentColor' : 'none'}
               viewBox="0 0 24 24" 
               stroke="currentColor"
@@ -283,27 +307,47 @@ const Feed = () => {
         </div>
 
         {post.comments?.length > 0 && (
-          <div className="mb-4 space-y-3">
+          <div className="mb-3 sm:mb-4 space-y-2 sm:space-y-3">
             {post.comments.map(comment => (
-              <div key={comment.id} className="flex items-start gap-3">
+              <div key={comment.id} className="flex items-start gap-2 sm:gap-3">
                 {comment.userPhotoURL ? (
-                  <img src={comment.userPhotoURL} alt="" className="w-8 h-8 rounded-full" />
+                  <img src={comment.userPhotoURL} alt="" className="w-6 h-6 sm:w-8 sm:h-8 rounded-full" />
                 ) : (
-                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                    <span className="text-gray-600 text-sm font-medium">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                    <span className="text-gray-600 text-xs sm:text-sm font-medium">
                       {comment.userName?.[0] || 'A'}
                     </span>
                   </div>
                 )}
-                <div className="flex-1">
-                  <p className="text-sm">
-                    <span className="font-medium">{comment.userName}</span>
-                    {' '}
-                    <span className="text-gray-500 text-xs">
-                      {new Date(comment.createdAt).toLocaleDateString()}
-                    </span>
-                  </p>
-                  <p className="text-gray-700">{comment.text}</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-xs sm:text-sm">
+                        <span className="font-medium">{comment.userName}</span>
+                        {' '}
+                        <span className="text-gray-500 text-xs">
+                          {new Date(comment.createdAt).toLocaleDateString()}
+                        </span>
+                      </p>
+                      <p className="text-gray-700 text-xs sm:text-sm break-words">{comment.text}</p>
+                    </div>
+                    {(comment.userId === currentUser.uid || post.userId === currentUser.uid) && (
+                      <button
+                        onClick={() => handleDeleteComment(post.id, comment.id)}
+                        disabled={deletingComment === comment.id}
+                        className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                        title="Delete comment"
+                      >
+                        {deletingComment === comment.id ? (
+                          <span className="loading">...</span>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -319,7 +363,7 @@ const Feed = () => {
               [post.id]: e.target.value
             })}
             placeholder="Add a comment..."
-            className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="flex-1 px-3 py-1.5 sm:py-2 text-sm sm:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -330,7 +374,7 @@ const Feed = () => {
           <button
             onClick={() => handleCommentSubmit(post.id, comments[post.id])}
             disabled={submittingComment === post.id || !comments[post.id]?.trim()}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 bg-primary text-white text-sm sm:text-base rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50"
           >
             {submittingComment === post.id ? 'Sending...' : 'Comment'}
           </button>
@@ -345,9 +389,11 @@ const Feed = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 animate-fade-in">
         <div className="bg-white rounded-lg shadow p-6 text-center">
-          <p className="text-gray-600">Loading...</p>
+          <div className="flex justify-center">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
         </div>
       </div>
     );
@@ -355,7 +401,7 @@ const Feed = () => {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 animate-fade-in">
         <div className="bg-white rounded-lg shadow p-6 text-center">
           <p className="text-red-600">{error}</p>
         </div>
@@ -365,7 +411,7 @@ const Feed = () => {
 
   if (!hasShared) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 animate-fade-in">
         <div className="bg-white rounded-lg shadow p-6 text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Feed Locked</h2>
           <p className="text-gray-600 mb-6">
@@ -383,18 +429,24 @@ const Feed = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Feed</h1>
+    <div className="container mx-auto px-4 py-6 sm:py-8 animate-fade-in">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Feed</h1>
       {loadingPosts ? (
-        <div className="bg-white rounded-lg shadow p-6 text-center">
-          <p className="text-gray-600">Loading posts...</p>
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6 text-center">
+          <div className="flex justify-center">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+          </div>
         </div>
       ) : posts.length > 0 ? (
-        <div className="space-y-6">
-          {posts.map(renderPost)}
+        <div className="space-y-4 sm:space-y-6">
+          {posts.map(post => (
+            <div key={post.id} className="animate-fade-in-up">
+              {renderPost(post)}
+            </div>
+          ))}
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow p-6 text-center">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6 text-center animate-fade-in">
           <p className="text-gray-600">No posts yet. Share your monthly ReLink to get started!</p>
         </div>
       )}

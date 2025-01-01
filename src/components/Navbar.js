@@ -3,100 +3,196 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ADMIN_UID } from '../constants/auth';
 
-const NavLink = ({ to, children, onClick, className = '' }) => {
-  const location = useLocation();
-  const isActive = location.pathname === to;
-  
-  return (
-    <Link
-      to={to}
-      onClick={onClick}
-      className={`
-        px-4 py-3 rounded-lg transition-all w-full
-        ${isActive 
-          ? 'bg-blue-50 text-primary font-medium' 
-          : 'text-gray-700 hover:bg-blue-50 hover:text-primary'
-        }
-        ${className}
-      `}
-    >
-      {children}
-    </Link>
-  );
-};
-
 const Navbar = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const { currentUser } = useAuth();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+
+  const isActive = (path) => location.pathname === path;
+
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const getAlternateMainLink = () => {
+    // On mobile, show the opposite of current main page in top bar
+    if (location.pathname === '/feed') {
+      return (
+        <Link
+          to="/vault"
+          className="text-gray-700 hover:text-gray-900 text-base font-medium px-3 py-2"
+        >
+          Vault
+        </Link>
+      );
+    }
+    if (location.pathname === '/vault') {
+      return (
+        <Link
+          to="/feed"
+          className="text-gray-700 hover:text-gray-900 text-base font-medium px-3 py-2"
+        >
+          Feed
+        </Link>
+      );
+    }
+    return null;
+  };
 
   return (
-    <>
-      {/* Fixed Header */}
-      <div className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center px-4 md:px-6 z-40">
-        <Link 
-          to="/" 
-          className="text-2xl font-semibold text-gray-900"
-          onClick={() => setIsMenuOpen(false)}
-        >
-          ReLink
-        </Link>
-        <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="md:hidden ml-auto p-2 text-gray-500 hover:text-gray-700 bg-white rounded-lg"
-        >
-          {isMenuOpen ? '✕' : '☰'}
-        </button>
+    <nav className="bg-white shadow-sm fixed top-0 left-0 right-0 z-[60]">
+      {/* Top bar container with higher z-index */}
+      <div className="bg-white relative z-[70] shadow-sm">
+        <div className="flex items-center justify-between h-12 px-4 md:px-6">
+          <div className="flex items-center gap-4">
+            <Link to="/" className="text-xl font-bold text-gray-900">
+              ReLink
+            </Link>
+          </div>
+
+          {currentUser && (
+            <div className="flex items-center gap-2">
+              {/* Show alternate main link (Feed/Vault) on mobile */}
+              <div className="md:hidden flex items-center">
+                {getAlternateMainLink()}
+              </div>
+
+              {/* Menu button */}
+              <button
+                onClick={toggleMenu}
+                className="md:hidden inline-flex items-center justify-center p-2 text-gray-700 hover:text-gray-900 rounded-lg"
+                aria-label="Open menu"
+              >
+                <svg
+                  className="h-6 w-6"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Navbar */}
-      <nav className={`
-        fixed top-16 md:top-0 left-0 h-[calc(100vh-4rem)] md:h-screen bg-white border-r border-gray-200 
-        transition-all duration-300 ease-in-out z-30
-        ${isMenuOpen ? 'w-64' : 'w-0 md:w-64'}
-      `}>
-        <div className="h-full p-6 overflow-y-auto">
-          <div className="flex flex-col min-h-full">
-            {/* Navigation Links */}
-            <div className={`flex flex-col gap-2 md:pt-16 ${isMenuOpen ? 'opacity-100' : 'opacity-0 md:opacity-100'}`}>
-              {currentUser ? (
-                <>
-                  <NavLink to="/vault" onClick={() => setIsMenuOpen(false)}>
-                    Vault
-                  </NavLink>
-                  <NavLink to="/feed" onClick={() => setIsMenuOpen(false)}>
-                    Feed
-                  </NavLink>
-                  <NavLink to="/profile" onClick={() => setIsMenuOpen(false)}>
-                    Profile
-                  </NavLink>
-                  {currentUser.uid === ADMIN_UID && (
-                    <NavLink 
-                      to="/admin"
-                      onClick={() => setIsMenuOpen(false)}
-                      className="mt-auto bg-primary text-white hover:bg-primary-hover"
-                    >
-                      Admin
-                    </NavLink>
-                  )}
-                </>
-              ) : (
-                <NavLink to="/" onClick={() => setIsMenuOpen(false)}>
-                  Login
-                </NavLink>
-              )}
-            </div>
+      {/* Mobile menu */}
+      {currentUser && (
+        <div 
+          className={`${
+            isOpen ? 'block' : 'hidden'
+          } md:hidden border-t border-gray-200 bg-white shadow-lg absolute w-full z-[65]`}
+        >
+          <div className="py-2">
+            <Link
+              to="/feed"
+              className={`block px-4 py-2 text-base font-medium ${
+                isActive('/feed')
+                  ? 'text-primary bg-primary bg-opacity-10'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+              onClick={() => setIsOpen(false)}
+            >
+              Feed
+            </Link>
+            <Link
+              to="/vault"
+              className={`block px-4 py-2 text-base font-medium ${
+                isActive('/vault')
+                  ? 'text-primary bg-primary bg-opacity-10'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+              onClick={() => setIsOpen(false)}
+            >
+              Vault
+            </Link>
+            <Link
+              to="/profile"
+              className={`block px-4 py-2 text-base font-medium ${
+                isActive('/profile')
+                  ? 'text-primary bg-primary bg-opacity-10'
+                  : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+              onClick={() => setIsOpen(false)}
+            >
+              Profile
+            </Link>
+            {currentUser.uid === ADMIN_UID && (
+              <Link
+                to="/admin"
+                className={`block px-4 py-2 text-base font-medium ${
+                  isActive('/admin')
+                    ? 'text-primary bg-primary bg-opacity-10'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+                onClick={() => setIsOpen(false)}
+              >
+                Admin
+              </Link>
+            )}
           </div>
         </div>
-      </nav>
-
-      {/* Overlay */}
-      {isMenuOpen && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-20"
-          onClick={() => setIsMenuOpen(false)}
-        />
       )}
-    </>
+
+      {/* Desktop sidebar */}
+      {currentUser && (
+        <div className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:bg-white md:border-r md:pt-12 md:w-48 z-50">
+          <div className="flex-1 flex flex-col pt-5 overflow-y-auto">
+            <nav className="flex-1 px-2 space-y-1">
+              <Link
+                to="/feed"
+                className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                  isActive('/feed')
+                    ? 'text-primary bg-primary bg-opacity-10'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                Feed
+              </Link>
+              <Link
+                to="/vault"
+                className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                  isActive('/vault')
+                    ? 'text-primary bg-primary bg-opacity-10'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                Vault
+              </Link>
+              <Link
+                to="/profile"
+                className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                  isActive('/profile')
+                    ? 'text-primary bg-primary bg-opacity-10'
+                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                Profile
+              </Link>
+              {currentUser.uid === ADMIN_UID && (
+                <Link
+                  to="/admin"
+                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                    isActive('/admin')
+                      ? 'text-primary bg-primary bg-opacity-10'
+                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  Admin
+                </Link>
+              )}
+            </nav>
+          </div>
+        </div>
+      )}
+    </nav>
   );
 };
 

@@ -113,7 +113,13 @@ const Vault = () => {
   };
 
   const handleUrlChange = async (e) => {
-    const newUrl = e.target.value;
+    let newUrl = e.target.value;
+    
+    // If URL doesn't start with a protocol, prepend https://
+    if (newUrl && !newUrl.match(/^https?:\/\//)) {
+      newUrl = `https://${newUrl}`;
+    }
+    
     setUrl(newUrl);
     setError('');
     setPreview(null);
@@ -136,8 +142,15 @@ const Vault = () => {
 
   const handleSaveLink = async (e) => {
     e.preventDefault();
-    if (!url || !url.match(/^https?:\/\/.+/)) {
-      setError('Please enter a valid URL starting with http:// or https://');
+    let urlToSave = url;
+    
+    // If URL doesn't start with a protocol, prepend https://
+    if (urlToSave && !urlToSave.match(/^https?:\/\//)) {
+      urlToSave = `https://${urlToSave}`;
+    }
+
+    if (!urlToSave || !urlToSave.match(/^https?:\/\/.+/)) {
+      setError('Please enter a valid URL');
       return;
     }
 
@@ -153,12 +166,12 @@ const Vault = () => {
       const metadata = isManualEntry ? {
         title: manualTitle.trim(),
         description: manualDescription.trim(),
-        url,
+        url: urlToSave,
         image: ''
-      } : (preview || await getLinkMetadata(url));
+      } : (preview || await getLinkMetadata(urlToSave));
 
       const linkData = {
-        url,
+        url: urlToSave,
         comment: '',
         userId: currentUser.uid,
         createdAt: new Date().toISOString(),
@@ -667,24 +680,24 @@ const Vault = () => {
 
   return (
     <div className="vault-container">
-      <div className="mb-8 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Your Vault</h1>
+      <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+        <h1 className="text-xl sm:text-2xl font-bold">Your Vault</h1>
         <button
           onClick={() => setIsShareModalOpen(true)}
-          className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+          className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors text-sm sm:text-base"
         >
           Edit {currentMonthName} ReLink
         </button>
       </div>
 
       {shareError && (
-        <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-lg">
+        <div className="mb-4 p-3 sm:p-4 bg-red-50 text-red-600 rounded-lg text-sm sm:text-base">
           {shareError}
         </div>
       )}
 
       <div className="add-links-section">
-        <h2>Add New Link</h2>
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">Add New Link</h2>
         <form onSubmit={handleSaveLink} className="form-group">
           <div className="link-entry">
             <input
@@ -692,7 +705,7 @@ const Vault = () => {
               value={url}
               onChange={handleUrlChange}
               placeholder="Enter URL"
-              className="link-input"
+              className="link-input text-sm sm:text-base"
               required
             />
             {isManualEntry && (
@@ -702,22 +715,22 @@ const Vault = () => {
                   value={manualTitle}
                   onChange={(e) => setManualTitle(e.target.value)}
                   placeholder="Enter title"
-                  className="link-input"
+                  className="link-input mt-3 text-sm sm:text-base"
                   required
                 />
                 <textarea
                   value={manualDescription}
                   onChange={(e) => setManualDescription(e.target.value)}
                   placeholder="Enter description (optional)"
-                  className="comment-input"
+                  className="comment-input mt-3 text-sm sm:text-base"
                 />
               </>
             )}
           </div>
-          {error && <p className="error-message">{error}</p>}
+          {error && <p className="error-message text-sm sm:text-base">{error}</p>}
           <button
             type="submit"
-            className="save-link-button"
+            className="save-link-button w-full sm:w-auto text-sm sm:text-base"
             disabled={loading || !url || (isManualEntry && !manualTitle.trim())}
           >
             {loading ? 'Saving...' : 'Save Link'}
@@ -726,32 +739,34 @@ const Vault = () => {
       </div>
 
       <div className="links-section">
-        <h2>Link Queue</h2>
+        <h2 className="text-lg sm:text-xl font-semibold">Link Queue</h2>
         <div className="link-list">
           {loadingLinks ? (
-            <p>Loading links...</p>
+            <p className="text-sm sm:text-base">Loading links...</p>
           ) : toReadLinks.length > 0 ? (
             toReadLinks.map(renderLinkCard)
           ) : (
-            <p>No links in queue</p>
+            <p className="text-sm sm:text-base">No links in queue</p>
           )}
         </div>
       </div>
 
       <div className="links-section">
-        <h2>Linked</h2>
+        <h2 className="text-lg sm:text-xl font-semibold">Linked</h2>
         <div className="link-list">
           {loadingLinks ? (
-            <p>Loading links...</p>
+            <p className="text-sm sm:text-base">Loading links...</p>
           ) : readLinks.length > 0 ? (
             groupLinksByWeek(readLinks).map(group => (
               <div key={`${group.year}-${group.weekNo}`} className="week-group">
-                <h3 className="week-header">Week {group.weekNo}, {group.year}</h3>
+                <h3 className="week-header text-base sm:text-lg font-medium mb-3 sm:mb-4">
+                  Week {group.weekNo}, {group.year}
+                </h3>
                 {group.links.map(renderLinkCard)}
               </div>
             ))
           ) : (
-            <p>No linked links</p>
+            <p className="text-sm sm:text-base">No linked links</p>
           )}
         </div>
       </div>
@@ -764,15 +779,17 @@ const Vault = () => {
         onConfirm={handleShareMonthlyReLink}
         title={`Share ${currentMonthName} ReLink`}
         message={
-          <div className="space-y-4">
-            <p>You're about to share your {currentMonthName} {currentYear} ReLink with your friends.</p>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="font-medium mb-2">Selected Links:</p>
-              <ol className="list-decimal list-inside space-y-2">
+          <div className="space-y-3 sm:space-y-4">
+            <p className="text-sm sm:text-base">
+              You're about to share your {currentMonthName} {currentYear} ReLink with your friends.
+            </p>
+            <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+              <p className="font-medium mb-2 text-sm sm:text-base">Selected Links:</p>
+              <ol className="list-decimal list-inside space-y-1.5 sm:space-y-2">
                 {selectedLinks.map(id => {
                   const link = readLinks.find(l => l.id === id);
                   return link ? (
-                    <li key={id} className="text-gray-700">
+                    <li key={id} className="text-gray-700 text-sm sm:text-base">
                       {link.title}
                     </li>
                   ) : null;
