@@ -1,721 +1,791 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, Timestamp, query, where, getDocs, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { format, setYear } from 'date-fns';
-import { getAuth } from 'firebase/auth';
+import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext';
+import { getLinkMetadata } from '../services/metadataService';
+import '../styles/Vault.css';
 import feedService from '../services/feedService';
-import { analytics } from '../firebase';
-import { logEvent } from 'firebase/analytics';
+import ConfirmModal from './ConfirmModal';
 
-// Helper function to safely get hostname from URL
-const getHostname = (urlString) => {
-  try {
-    const url = new URL(urlString);
-    return url.hostname;
-  } catch (error) {
-    return urlString;
-  }
+const getWeekNumber = (date) => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return { weekNo, year: date.getFullYear() };
 };
 
-// Helper function to safely create preview object
-const createPreview = (data) => {
-  return {
-    title: data?.preview?.title || data?.preview?.site || 'No Title',
-    description: data?.preview?.description || '',
-    image: data?.preview?.image || '',
-    url: data?.url || '',
-    author: data?.preview?.author || '',
-    site: data?.preview?.site || '',
-    date: data?.preview?.date || ''
-  };
+const formatMonth = (date) => {
+  return new Intl.DateTimeFormat('en-US', { month: 'short' }).format(date);
 };
 
-const fetchUrlMetadata = async (url) => {
-  try {
-    const auth = getAuth();
-    const idToken = await auth.currentUser.getIdToken();
-    const response = await fetch('https://us-central1-curate-f809d.cloudfunctions.net/fetchUrlMetadata', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`
-      },
-      body: JSON.stringify({ url })
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    if (!data || !data.data) {
-      throw new Error('Invalid response format');
-    }
-    
-    return data;
-  } catch (error) {
-    console.error('Error fetching URL metadata:', error);
-    // Return basic preview data instead of throwing
-    return {
-      data: {
-        title: getHostname(url),
-        description: '',
-        image: '',
-        url: url
-      }
-    };
-  }
-};
-
-export default function Vault() {
-  const initialLinkEntries = [{ url: '', comment: '', title: '', preview: null }];
-  const [linkEntries, setLinkEntries] = useState(initialLinkEntries);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [savedLinks, setSavedLinks] = useState([]);
-  const [loading, setLoading] = useState(true);
+const Vault = () => {
   const { currentUser } = useAuth();
-  const [editingLink, setEditingLink] = useState(null);
-  const [openMenu, setOpenMenu] = useState(null);
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingLinks, setLoadingLinks] = useState(true);
+  const [error, setError] = useState('');
+  const [preview, setPreview] = useState(null);
+  const [toReadLinks, setToReadLinks] = useState([]);
+  const [readLinks, setReadLinks] = useState([]);
+  const [comments, setComments] = useState({});
+  const [debouncedSaveTimeout, setDebouncedSaveTimeout] = useState(null);
+  const [manualTitle, setManualTitle] = useState('');
+  const [manualDescription, setManualDescription] = useState('');
+  const [isManualEntry, setIsManualEntry] = useState(false);
+  const [editingTitleId, setEditingTitleId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingComment, setEditingComment] = useState('');
+  const [editingDateId, setEditingDateId] = useState(null);
+  const [editingDate, setEditingDate] = useState('');
+  const [selectedLinkId, setSelectedLinkId] = useState(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareError, setShareError] = useState('');
   const [selectedLinks, setSelectedLinks] = useState([]);
-  const [isSharing, setIsSharing] = useState(false);
-  const [showShareSuccess, setShowShareSuccess] = useState(false);
-  const [hasSharedThisWeek, setHasSharedThisWeek] = useState(false);
-  const [currentWeekPost, setCurrentWeekPost] = useState(null);
-
-  // Set dates for 2024
-  const now = new Date();
-  const year2024 = setYear(now, 2024);
-  const currentMonthKey = format(year2024, 'MMMM yyyy');
+  const [isSelectingLinks, setIsSelectingLinks] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [confirmShare, setConfirmShare] = useState(false);
+  const [currentMonthName, setCurrentMonthName] = useState('');
+  const [currentYear, setCurrentYear] = useState('');
 
   useEffect(() => {
-    loadSavedLinks();
+    if (currentUser) {
+      loadLinks();
+    }
   }, [currentUser]);
 
-  // Update the check for this week's share status
   useEffect(() => {
-    const checkWeeklyShare = async () => {
-      if (currentUser) {
-        try {
-          const post = await feedService.getCurrentWeekPost(currentUser.uid);
-          setCurrentWeekPost(post);
-          setHasSharedThisWeek(!!post);
-        } catch (error) {
-          console.error('Error checking weekly post:', error);
-          setError('Failed to check weekly post status');
-        }
-      }
-    };
-    checkWeeklyShare();
-  }, [currentUser]);
-
-  const loadSavedLinks = async () => {
-    try {
-      // Create start and end dates for December 2024
-      const startOfDecember = new Date(2024, 11, 1); // Month is 0-based, so 11 is December
-      const endOfDecember = new Date(2024, 11, 31, 23, 59, 59, 999);
-
-      const q = query(
-        collection(db, "relinks"),
-        where("userId", "==", currentUser.uid),
-        where("createdAt", ">=", Timestamp.fromDate(startOfDecember)),
-        where("createdAt", "<=", Timestamp.fromDate(endOfDecember)),
-        orderBy("createdAt", "desc")
-      );
-      
-      const querySnapshot = await getDocs(q);
-      const links = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          preview: createPreview(data),
-          createdAt: data.createdAt.toDate()
-        };
-      });
-      setSavedLinks(links);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error loading saved links:', error);
-      setError('Failed to load saved links');
-      setLoading(false);
-    }
-  };
-
-  const saveLink = async (entry, index) => {
-    if (!entry.url || !entry.url.match(/^https?:\/\/.+/)) return;
-    
-    try {
-      // Validate URL before saving
-      try {
-        new URL(entry.url);
-      } catch (urlError) {
-        setError('Invalid URL format');
-        return;
-      }
-
-      const docRef = await addDoc(collection(db, "relinks"), {
-        userId: currentUser.uid,
-        authorId: currentUser.uid,
-        authorName: currentUser.displayName || currentUser.email,
-        authorPhotoURL: currentUser.photoURL,
-        url: entry.url,
-        comment: entry.comment || '',
-        preview: entry.preview || {
-          title: new URL(entry.url).hostname,
-          description: '',
-          image: '',
-          url: entry.url
-        },
-        createdAt: Timestamp.now()
-      });
-      
-      console.log('Saved to Firestore with ID:', docRef.id);
-      
-      // Track link sharing event
-      logEvent(analytics, 'share_link', {
-        link_type: 'url',
-        has_comment: !!entry.comment,
-        has_preview: !!entry.preview
-      });
-      
-      if (docRef.id) {
-        await loadSavedLinks(); // Load saved links first
-        const newEntry = { url: '', comment: '', title: '', preview: null };
-        const updatedEntries = [...linkEntries];
-        updatedEntries[index] = newEntry;
-        setLinkEntries(updatedEntries);
-        setSuccess('Link saved successfully!');
-      }
-    } catch (error) {
-      console.error('Save error:', error);
-      setError('Failed to save link. Please try again.');
-    }
-  };
-
-  const handleLinkChange = async (index, value) => {
-    try {
-      const updatedEntries = [...linkEntries];
-      updatedEntries[index] = {
-        ...updatedEntries[index],
-        url: value
-      };
-      setLinkEntries(updatedEntries);
-
-      // Check if it's a valid URL
-      if (value && value.match(/^https?:\/\/.+/)) {
-        try {
-          console.log('Fetching metadata for:', value);
-          const result = await fetchUrlMetadata(value);
-          console.log('API response:', result);
-          
-          if (result?.data) {
-            const preview = {
-              title: result.data.title || getHostname(value),
-              description: result.data.description || '',
-              image: result.data.image || '',
-              url: value
-            };
-            
-            console.log('Preview data:', preview);
-            
-            // Update the entry with preview but don't save yet
-            updatedEntries[index] = {
-              ...updatedEntries[index],
-              preview: preview
-            };
-            setLinkEntries([...updatedEntries]);
-          }
-        } catch (previewError) {
-          console.error('Preview API error:', previewError);
-          // Create basic preview if API fails
-          const basicPreview = {
-            title: getHostname(value),
-            description: '',
-            image: '',
-            url: value
-          };
-          
-          // Update the entry with basic preview but don't save yet
-          updatedEntries[index] = {
-            ...updatedEntries[index],
-            preview: basicPreview
-          };
-          setLinkEntries([...updatedEntries]);
-        }
-      } else if (value && !value.match(/^https?:\/\/.+/)) {
-        setError('Please enter a valid URL starting with http:// or https://');
-      } else if (!value) {
-        updatedEntries[index].preview = null;
-        setLinkEntries([...updatedEntries]);
-        setError('');
-      }
-    } catch (error) {
-      console.error('General error in handleLinkChange:', error);
-      setError('An unexpected error occurred. Please try again.');
-    }
-  };
-
-  const handleCommentChange = (index, value) => {
-    const updatedEntries = [...linkEntries];
-    updatedEntries[index] = {
-      ...updatedEntries[index],
-      comment: value
-    };
-    setLinkEntries(updatedEntries);
-  };
-
-  // Add cleanup effect to save any unsaved changes when leaving the page
-  useEffect(() => {
-    return () => {
-      // Save any unsaved entries when component unmounts
-      linkEntries.forEach((entry, index) => {
-        if (entry.url && entry.preview) {
-          saveLink(entry, index);
-        }
-      });
-    };
+    const now = new Date();
+    setCurrentMonthName(new Intl.DateTimeFormat('en-US', { month: 'long' }).format(now));
+    setCurrentYear(now.getFullYear());
   }, []);
 
-  const handleKeyDown = async (index, event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      const entry = linkEntries[index];
-      if (entry.url && entry.preview) {
-        try {
-          const docRef = await addDoc(collection(db, "relinks"), {
-            userId: currentUser.uid,
-            url: entry.url,
-            comment: entry.comment || '',
-            preview: entry.preview,
-            createdAt: Timestamp.now()
-          });
-          
-          if (docRef.id) {
-            const newEntry = { url: '', comment: '', title: '', preview: null };
-            const updatedEntries = [...linkEntries];
-            updatedEntries[index] = newEntry;
-            setLinkEntries(updatedEntries);
-            setSuccess('Link saved successfully!');
-            await loadSavedLinks();
-          }
-        } catch (error) {
-          console.error('Save error:', error);
-          setError('Failed to save link. Please try again.');
+  // Initialize comments state when links load
+  useEffect(() => {
+    const newComments = {};
+    toReadLinks.forEach(link => {
+      newComments[link.id] = link.comment || '';
+    });
+    setComments(newComments);
+  }, [toReadLinks]);
+
+  // Cleanup timeouts
+  useEffect(() => {
+    return () => {
+      if (debouncedSaveTimeout) {
+        clearTimeout(debouncedSaveTimeout);
+      }
+    };
+  }, [debouncedSaveTimeout]);
+
+  const loadLinks = async () => {
+    if (!currentUser) return;
+
+    setLoadingLinks(true);
+    setError('');
+
+    try {
+      const linksRef = collection(db, 'links');
+      const q = query(linksRef, where('userId', '==', currentUser.uid));
+      const querySnapshot = await getDocs(q);
+      
+      const toRead = [];
+      const read = [];
+      
+      querySnapshot.forEach((doc) => {
+        const link = { id: doc.id, ...doc.data() };
+        if (link.isRead) {
+          read.push(link);
+        } else {
+          toRead.push(link);
+        }
+      });
+      
+      setToReadLinks(toRead);
+      setReadLinks(read);
+      setLoadingLinks(false);
+    } catch (err) {
+      console.error('Error loading links:', err);
+      setError('Failed to load links. Please try again later.');
+      setLoadingLinks(false);
+    }
+  };
+
+  const handleUrlChange = async (e) => {
+    const newUrl = e.target.value;
+    setUrl(newUrl);
+    setError('');
+    setPreview(null);
+    setIsManualEntry(false);
+    setManualTitle('');
+    setManualDescription('');
+
+    if (newUrl && newUrl.match(/^https?:\/\/.+/)) {
+      try {
+        const metadata = await getLinkMetadata(newUrl);
+        setPreview(metadata);
+      } catch (err) {
+        console.error('Error fetching metadata:', err);
+        if (err.name === 'MetadataFetchError') {
+          setIsManualEntry(true);
         }
       }
     }
   };
 
-  const addNewLinkEntry = () => {
-    const newEntry = {
-      id: Date.now(), // Add unique ID for each entry
-      url: '',
-      comment: '',
-      title: '',
-      preview: null
-    };
-    setLinkEntries([newEntry, ...linkEntries]);
-  };
+  const handleSaveLink = async (e) => {
+    e.preventDefault();
+    if (!url || !url.match(/^https?:\/\/.+/)) {
+      setError('Please enter a valid URL starting with http:// or https://');
+      return;
+    }
 
-  const removeLinkEntry = (index) => {
-    // Protect the last link (Link 1)
-    if (index !== linkEntries.length - 1) {
-      const updatedEntries = linkEntries.filter((_, i) => i !== index);
-      setLinkEntries(updatedEntries);
+    if (isManualEntry && !manualTitle.trim()) {
+      setError('Please enter a title for the link');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const metadata = isManualEntry ? {
+        title: manualTitle.trim(),
+        description: manualDescription.trim(),
+        url,
+        image: ''
+      } : (preview || await getLinkMetadata(url));
+
+      const linkData = {
+        url,
+        comment: '',
+        userId: currentUser.uid,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        title: metadata.title,
+        description: metadata.description || '',
+        image: metadata.image || '',
+      };
+
+      await addDoc(collection(db, 'links'), linkData);
+      
+      setUrl('');
+      setPreview(null);
+      setManualTitle('');
+      setManualDescription('');
+      setIsManualEntry(false);
+      await loadLinks();
+    } catch (err) {
+      console.error('Error saving link:', err);
+      setError('Failed to save link. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDelete = async (linkId) => {
-    try {
-      console.log('Deleting link with ID:', linkId);
-      const linkRef = doc(db, "relinks", linkId);
-      await deleteDoc(linkRef);
-      console.log('Link deleted successfully');
-      await loadSavedLinks();
-      setSuccess('Link deleted successfully');
-    } catch (error) {
-      console.error('Delete error:', error);
-      setError('Failed to delete link');
+  const handleCommentChange = (linkId, newComment) => {
+    // Update local state immediately for smooth typing
+    setComments(prev => ({ ...prev, [linkId]: newComment }));
+
+    // Clear any existing timeout
+    if (debouncedSaveTimeout) {
+      clearTimeout(debouncedSaveTimeout);
     }
+
+    // Set new timeout for saving to Firestore
+    const timeoutId = setTimeout(async () => {
+      try {
+        const linkRef = doc(db, 'links', linkId);
+        await updateDoc(linkRef, { comment: newComment });
+      } catch (err) {
+        console.error('Error saving comment:', err);
+        setError('Failed to save comment.');
+      }
+    }, 2000); // Increased debounce time to 2 seconds
+
+    setDebouncedSaveTimeout(timeoutId);
   };
 
-  const handleEdit = async (linkId, updates) => {
+  const handleToggleRead = async (linkId, currentReadState) => {
     try {
-      console.log('Editing link with ID:', linkId);
-      const linkRef = doc(db, "relinks", linkId);
+      const linkRef = doc(db, 'links', linkId);
       await updateDoc(linkRef, {
-        ...updates,
-        updatedAt: Timestamp.now()
+        isRead: !currentReadState
       });
-      console.log('Link updated successfully');
-      setEditingLink(null);
-      await loadSavedLinks();
-      setSuccess('Link updated successfully');
-    } catch (error) {
-      console.error('Edit error:', error);
-      setError('Failed to update link');
+      await loadLinks();
+    } catch (err) {
+      console.error('Error updating link:', err);
+      setError('Failed to update link status.');
     }
   };
 
-  const handleShareMonthly = () => {
-    if (hasSharedThisWeek && currentWeekPost && Array.isArray(currentWeekPost.links)) {
-      // Pre-select the current week's links if editing
-      const currentLinks = currentWeekPost.links.map(link => {
-        const savedLink = savedLinks.find(saved => saved.url === link.url);
-        return savedLink || link;
-      });
-      setSelectedLinks(currentLinks);
-    } else {
-      setSelectedLinks([]);
-    }
-    setIsSharing(true);
-  };
-
-  const handleShareSubmit = async () => {
-    if (selectedLinks.length === 0 || selectedLinks.length > 5) {
-      setError('Please select between 1 and 5 links to share');
+  const handleDeleteLink = async (linkId) => {
+    if (!window.confirm('Are you sure you want to delete this link? This action cannot be undone.')) {
       return;
     }
 
     try {
-      setError('');
-      const sharedLinks = selectedLinks.map(link => ({
-        url: link.url,
-        title: link.preview?.title || getHostname(link.url),
-        description: link.preview?.description || '',
-        image: link.preview?.image || '',
-        comment: link.comment || '',
-        author: link.preview?.author || '',
-        site: link.preview?.site || getHostname(link.url),
-        date: link.preview?.date || ''
-      }));
+      const linkRef = doc(db, 'links', linkId);
+      await deleteDoc(linkRef);
+      
+      // Remove the link from state
+      setToReadLinks(toReadLinks.filter(link => link.id !== linkId));
+      setReadLinks(readLinks.filter(link => link.id !== linkId));
+      
+      // Remove from selected links if it was selected
+      if (selectedLinks.includes(linkId)) {
+        setSelectedLinks(selectedLinks.filter(id => id !== linkId));
+      }
+    } catch (error) {
+      console.error('Error deleting link:', error);
+      alert('Failed to delete link. Please try again.');
+    }
+  };
 
-      const postData = {
+  const handleEditTitle = async (linkId, newTitle) => {
+    if (!newTitle.trim()) return;
+    
+    try {
+      const linkRef = doc(db, 'links', linkId);
+      await updateDoc(linkRef, { title: newTitle.trim() });
+      await loadLinks();
+      setEditingTitleId(null);
+      setEditingTitle('');
+    } catch (err) {
+      console.error('Error updating title:', err);
+      setError('Failed to update title.');
+    }
+  };
+
+  const startEditingTitle = (linkId, currentTitle) => {
+    setEditingTitleId(linkId);
+    setEditingTitle(currentTitle);
+  };
+
+  const handleEditComment = async (linkId, newComment) => {
+    try {
+      const linkRef = doc(db, 'links', linkId);
+      await updateDoc(linkRef, { comment: newComment.trim() });
+      await loadLinks();
+      setEditingCommentId(null);
+      setEditingComment('');
+    } catch (err) {
+      console.error('Error updating comment:', err);
+      setError('Failed to update comment.');
+    }
+  };
+
+  const startEditingComment = (linkId, currentComment) => {
+    setEditingCommentId(linkId);
+    setEditingComment(currentComment || '');
+  };
+
+  const handleEditDate = async (linkId, newDate) => {
+    try {
+      const linkRef = doc(db, 'links', linkId);
+      const newDateISO = new Date(newDate).toISOString();
+      await updateDoc(linkRef, { createdAt: newDateISO });
+      
+      // Update state locally instead of reloading
+      setReadLinks(prevLinks => {
+        const updatedLinks = prevLinks.map(link => 
+          link.id === linkId ? { ...link, createdAt: newDateISO } : link
+        );
+        return updatedLinks;
+      });
+      
+      setEditingDateId(null);
+      setEditingDate('');
+    } catch (err) {
+      console.error('Error updating date:', err);
+      setError('Failed to update date.');
+    }
+  };
+
+  const startEditingDate = (linkId, currentDate) => {
+    setEditingDateId(linkId);
+    // Format date to YYYY-MM-DD for input
+    const date = new Date(currentDate);
+    const formattedDate = date.toISOString().split('T')[0];
+    setEditingDate(formattedDate);
+  };
+
+  const groupLinksByWeek = (links) => {
+    const grouped = {};
+    links.forEach(link => {
+      const date = new Date(link.createdAt);
+      const { weekNo, year } = getWeekNumber(date);
+      const key = `${year}-${weekNo}`;
+      if (!grouped[key]) {
+        grouped[key] = {
+          weekNo,
+          year,
+          links: []
+        };
+      }
+      grouped[key].links.push(link);
+    });
+    
+    // Convert to array and sort by date (newest first)
+    return Object.values(grouped)
+      .sort((a, b) => {
+        if (a.year !== b.year) return b.year - a.year;
+        return b.weekNo - a.weekNo;
+      });
+  };
+
+  const handleShareToFeed = async (linkId) => {
+    setShareLoading(true);
+    setShareError('');
+    try {
+      const link = readLinks.find(l => l.id === linkId) || toReadLinks.find(l => l.id === linkId);
+      if (!link) {
+        throw new Error('Link not found');
+      }
+
+      await feedService.createPost({
+        url: link.url,
+        title: link.title,
+        description: link.description,
+        comment: link.comment,
         userId: currentUser.uid,
         authorId: currentUser.uid,
         authorName: currentUser.displayName || currentUser.email,
         authorPhotoURL: currentUser.photoURL,
-        links: sharedLinks,
-        month: format(year2024, 'MMMM yyyy')
-      };
+        createdAt: new Date()
+      });
 
-      if (hasSharedThisWeek && currentWeekPost) {
-        await feedService.updatePost(postData);
-        setSuccess('Links updated successfully!');
-      } else {
-        await feedService.createPost(postData);
-        setSuccess('Links shared successfully!');
-        setHasSharedThisWeek(true);
-      }
-
-      setIsSharing(false);
-      setSelectedLinks([]);
-      setShowShareSuccess(true);
-      setTimeout(() => setShowShareSuccess(false), 3000);
-      
-      // Refresh current week's post
-      const updatedPost = await feedService.getCurrentWeekPost(currentUser.uid);
-      setCurrentWeekPost(updatedPost);
-      
-      if (window.location.pathname === '/feed') {
-        window.dispatchEvent(new CustomEvent('reloadFeed'));
-      }
+      setShareError('');
+      // Refresh links to update UI
+      await loadLinks();
     } catch (error) {
-      console.error('Error sharing links:', error);
-      setError('Failed to share links: ' + error.message);
+      console.error('Error sharing to feed:', error);
+      setShareError('Failed to share link to feed. Please try again.');
+    } finally {
+      setShareLoading(false);
     }
   };
 
-  const toggleLinkSelection = (link) => {
-    if (selectedLinks.find(l => l.id === link.id)) {
-      setSelectedLinks(selectedLinks.filter(l => l.id !== link.id));
-    } else if (selectedLinks.length < 5) {
-      setSelectedLinks([...selectedLinks, link]);
-    } else {
-      setError('You can only select up to 5 links');
+  const handleShareMonthlyReLink = async () => {
+    setShareLoading(true);
+    setShareError('');
+    try {
+      if (selectedLinks.length !== 5) {
+        throw new Error('Please select exactly 5 links to share');
+      }
+
+      const links = selectedLinks.map(id => 
+        readLinks.find(l => l.id === id) || toReadLinks.find(l => l.id === id)
+      ).filter(Boolean);
+
+      await feedService.createPost({
+        monthlyLinks: links.map(link => ({
+          url: link.url,
+          title: link.title,
+          description: link.description,
+          comment: link.comment
+        })),
+        userId: currentUser.uid,
+        authorId: currentUser.uid,
+        authorName: currentUser.displayName || currentUser.email,
+        authorPhotoURL: currentUser.photoURL,
+        createdAt: new Date(),
+        type: 'monthly'
+      });
+
+      setShareError('');
+      setIsShareModalOpen(false);
+      setSelectedLinks([]);
+      alert('Successfully shared your monthly ReLink!');
+      // Refresh links to update UI
+      await loadLinks();
+    } catch (error) {
+      console.error('Error sharing monthly ReLink:', error);
+      setShareError(error.message || 'Failed to share monthly ReLink. Please try again.');
+    } finally {
+      setShareLoading(false);
+      setConfirmShare(false);
     }
   };
 
-  // Add event listener for post deletion
-  useEffect(() => {
-    const handlePostDeleted = () => {
-      setHasSharedThisWeek(false);
-      setCurrentWeekPost(null);
-    };
+  const toggleLinkSelection = (linkId) => {
+    setSelectedLinks(prev => {
+      if (prev.includes(linkId)) {
+        return prev.filter(id => id !== linkId);
+      }
+      if (prev.length >= 5) {
+        return prev;
+      }
+      return [...prev, linkId];
+    });
+  };
 
-    window.addEventListener('weeklyPostDeleted', handlePostDeleted);
-    return () => window.removeEventListener('weeklyPostDeleted', handlePostDeleted);
-  }, []);
-
-  return (
-    <div className="vault-container">
-      <h2>Your Link Vault</h2>
-      {error && <div className="error">{error}</div>}
-      {success && <div className="success">{success}</div>}
-      
-      <div>
-        <div className="vault-header">
-          <h4 className="month-header">{currentMonthKey}</h4>
+  const renderLinkCard = (link) => (
+    <div key={link.id} className="link-card bg-white rounded-lg shadow-sm p-6 mb-4">
+      {isSelectingLinks && (
+        <div className="absolute top-4 right-4">
+          <input
+            type="checkbox"
+            checked={selectedLinks.includes(link.id)}
+            onChange={() => toggleLinkSelection(link.id)}
+            disabled={!selectedLinks.includes(link.id) && selectedLinks.length >= 5}
+            className="w-5 h-5"
+          />
         </div>
-        <div className="share-button-container">
-          <button 
-            className={`share-monthly-button ${hasSharedThisWeek ? 'shared' : ''}`}
-            onClick={handleShareMonthly}
+      )}
+      <div className="link-header">
+        <div className="link-title-group">
+          {editingTitleId === link.id ? (
+            <div className="edit-title-container">
+              <div className="edit-title-wrapper">
+                <input
+                  type="text"
+                  value={editingTitle}
+                  onChange={(e) => setEditingTitle(e.target.value)}
+                  className="edit-title-input"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleEditTitle(link.id, editingTitle);
+                    } else if (e.key === 'Escape') {
+                      setEditingTitleId(null);
+                      setEditingTitle('');
+                    }
+                  }}
+                  autoFocus
+                />
+                <div className="edit-title-actions">
+                  <button
+                    onClick={() => handleEditTitle(link.id, editingTitle)}
+                    className="edit-title-save"
+                    title="Save (Enter)"
+                  >
+                    ✓
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingTitleId(null);
+                      setEditingTitle('');
+                    }}
+                    className="edit-title-cancel"
+                    title="Cancel (Esc)"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+              <a href={link.url} target="_blank" rel="noopener noreferrer" className="link-url">
+                {link.url}
+              </a>
+            </div>
+          ) : (
+            <>
+              <div 
+                className="title-display"
+                onClick={() => startEditingTitle(link.id, link.title)}
+                title="Click to edit title"
+              >
+                <h3 className="link-title">
+                  {link.title}
+                </h3>
+              </div>
+              <a href={link.url} target="_blank" rel="noopener noreferrer" className="link-url">
+                {link.url}
+              </a>
+            </>
+          )}
+        </div>
+        <div className="link-actions">
+          <button
+            onClick={() => handleDeleteLink(link.id)}
+            className="text-gray-400 hover:text-red-500 transition-colors p-2"
+            title="Delete link"
           >
-            {hasSharedThisWeek ? 'Edit ReLink' : 'Share ReLink'}
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
           </button>
         </div>
       </div>
-
-      <div className="add-links-section">
-        {[...linkEntries].map((entry, index) => (
-          <div key={entry.id || index} className="link-entry">
-            {index !== linkEntries.length - 1 && (
-              <button
-                type="button"
-                className="remove-link-button"
-                onClick={() => removeLinkEntry(index)}
-              >
-                ×
-              </button>
-            )}
-            <div className="form-group">
-              <label>New Link</label>
-              <input
-                type="url"
-                value={entry.url}
-                onChange={(e) => handleLinkChange(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
-                onPaste={(e) => {
+      <div className="link-content">
+        {editingCommentId === link.id ? (
+          <div className="edit-comment-container">
+            <textarea
+              value={editingComment}
+              onChange={(e) => setEditingComment(e.target.value)}
+              className="edit-comment-input"
+              placeholder="Add your thoughts..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  const pastedText = e.clipboardData.getData('text');
-                  handleLinkChange(index, pastedText);
-                }}
-                placeholder="https://"
-              />
-              {entry.preview && (
-                <div className="link-preview">
-                  <a href={entry.url} target="_blank" rel="noopener noreferrer" className="preview-title">
-                    {entry.preview.title}
-                  </a>
-                  {entry.preview.image && (
-                    <div className="preview-image">
-                      <img src={entry.preview.image} alt={entry.preview.title || 'Link preview'} />
-                    </div>
-                  )}
-                  {entry.preview.description && (
-                    <p className="preview-description">{entry.preview.description}</p>
-                  )}
-                  <div className="preview-meta">
-                    {entry.preview.site && (
-                      <span className="preview-site">{entry.preview.site}</span>
-                    )}
-                    {entry.preview.author && (
-                      <span className="preview-author">By {entry.preview.author}</span>
-                    )}
-                    {entry.preview.date && (
-                      <span className="preview-date">{entry.preview.date}</span>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="form-group">
-              <textarea
-                value={entry.comment}
-                onChange={(e) => handleCommentChange(index, e.target.value)}
-                placeholder="Share your thoughts about this link..."
-              />
-            </div>
-            {entry.preview && (
+                  handleEditComment(link.id, editingComment);
+                } else if (e.key === 'Escape') {
+                  setEditingCommentId(null);
+                  setEditingComment('');
+                }
+              }}
+              autoFocus
+            />
+            <div className="edit-comment-actions">
               <button
-                type="button"
-                className="save-link-button"
-                onClick={() => saveLink(entry, index)}
+                onClick={() => handleEditComment(link.id, editingComment)}
+                className="edit-comment-save"
+                title="Save (Enter)"
               >
-                Save Link
+                ✓
               </button>
+              <button
+                onClick={() => {
+                  setEditingCommentId(null);
+                  setEditingComment('');
+                }}
+                className="edit-comment-cancel"
+                title="Cancel (Esc)"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div 
+            className="comment-display"
+            onClick={() => startEditingComment(link.id, link.comment)}
+            title={link.comment ? "Click to edit comment" : "Click to add a comment"}
+          >
+            {link.comment ? (
+              <p className="link-comment">{link.comment}</p>
+            ) : (
+              <p className="no-comment">Add your thoughts...</p>
             )}
           </div>
-        ))}
+        )}
       </div>
+      <div className="link-footer">
+        <button
+          className={`link-button ${link.isRead ? 'mark-as-unread' : 'mark-as-read'}`}
+          onClick={() => handleToggleRead(link.id, link.isRead)}
+        >
+          {link.isRead ? 'Move to To Link' : 'Move to Linked'}
+        </button>
+      </div>
+    </div>
+  );
 
-      {isSharing && (
-        <div className="sharing-modal">
-          <div className="sharing-modal-content">
-            <h3>Select up to 5 links to share</h3>
-            <p>Selected: {selectedLinks.length}/5</p>
-            <div className="selected-links">
-              {savedLinks.map((link) => (
-                <div 
-                  key={link.id} 
-                  className={`link-selection ${selectedLinks.find(l => l.id === link.id) ? 'selected' : ''}`}
-                  onClick={() => toggleLinkSelection(link)}
-                >
-                  <div className="link-preview">
-                    <span className="preview-title">{link.preview.title}</span>
-                    {link.comment && <p className="preview-comment">{link.comment}</p>}
+  const renderShareModal = () => {
+    if (!isShareModalOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">Edit {currentMonthName} ReLink</h2>
+            <button
+              onClick={() => {
+                setIsShareModalOpen(false);
+                setSelectedLinks([]);
+              }}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+
+          <p className="text-gray-600 mb-6">
+            Select your top 5 favorite links from your Linked section to share with your friends.
+            This will be your ReLink for {currentMonthName} {currentYear}.
+          </p>
+
+          <div className="space-y-4">
+            {readLinks.map(link => (
+              <div 
+                key={link.id} 
+                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                  selectedLinks.includes(link.id) 
+                    ? 'border-primary bg-primary bg-opacity-5' 
+                    : 'border-gray-200 hover:border-primary'
+                }`}
+                onClick={() => toggleLinkSelection(link.id)}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedLinks.includes(link.id)}
+                    onChange={() => toggleLinkSelection(link.id)}
+                    className="mt-1 w-5 h-5"
+                  />
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900">{link.title}</h3>
+                    <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
+                      {link.url}
+                    </a>
+                    {link.comment && (
+                      <p className="mt-2 text-gray-600 text-sm">{link.comment}</p>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
-            <div className="sharing-actions">
-              <button 
-                className="cancel-share" 
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex items-center justify-between">
+            <span className="text-gray-600">
+              {selectedLinks.length}/5 links selected
+            </span>
+            <div className="flex gap-3">
+              <button
                 onClick={() => {
-                  setIsSharing(false);
+                  setIsShareModalOpen(false);
                   setSelectedLinks([]);
                 }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
               >
                 Cancel
               </button>
-              <button 
-                className="confirm-share"
-                onClick={handleShareSubmit}
-                disabled={selectedLinks.length === 0 || selectedLinks.length > 5}
+              <button
+                onClick={() => setConfirmShare(true)}
+                disabled={selectedLinks.length !== 5 || shareLoading}
+                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50"
               >
-                Share {selectedLinks.length} Links
+                {shareLoading ? 'Sharing...' : `Share ${currentMonthName} ReLink`}
               </button>
             </div>
           </div>
+
+          {shareError && (
+            <div className="mt-4 p-4 bg-red-50 text-red-600 rounded-lg">
+              {shareError}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  if (!currentUser) {
+    return <div className="vault-container">Please sign in to access your vault.</div>;
+  }
+
+  return (
+    <div className="vault-container">
+      <div className="mb-8 flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Your Vault</h1>
+        <button
+          onClick={() => setIsShareModalOpen(true)}
+          className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+        >
+          Edit {currentMonthName} ReLink
+        </button>
+      </div>
+
+      {shareError && (
+        <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-lg">
+          {shareError}
         </div>
       )}
 
-      <div className="month-section">
-        <div className="month-links">
-          {loading ? (
-            <div className="loading">Loading saved links...</div>
-          ) : savedLinks.length > 0 ? (
-            savedLinks.map((link) => (
-              <div key={link.id} className={`saved-link-entry ${editingLink === link.id ? 'edit-mode' : ''}`}>
-                <div className="link-settings">
-                  <button
-                    className="link-settings-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenMenu(openMenu === link.id ? null : link.id);
-                    }}
-                  >
-                    ⋮
-                  </button>
-                  {openMenu === link.id && (
-                    <div className="link-settings-menu">
-                      <button onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingLink(link.id);
-                        setOpenMenu(null);
-                      }}>
-                        ✏️ Edit
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <div className="link-preview">
-                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="preview-title">
-                    {link.preview.title}
-                  </a>
-                  {link.preview.image && (
-                    <div className="preview-image">
-                      <img src={link.preview.image} alt={link.preview.title || 'Link preview'} />
-                    </div>
-                  )}
-                  {link.preview.description && (
-                    <p className="preview-description">{link.preview.description}</p>
-                  )}
-                  <div className="preview-meta">
-                    {link.preview.site && (
-                      <span className="preview-site">{link.preview.site}</span>
-                    )}
-                    {link.preview.author && (
-                      <span className="preview-author">By {link.preview.author}</span>
-                    )}
-                    <span className="preview-date">
-                      {format(link.createdAt, 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                  {link.comment && (
-                    <p className="saved-comment">{link.comment}</p>
-                  )}
-                </div>
-                {editingLink === link.id && (
-                  <div className="edit-form">
-                    <input
-                      type="url"
-                      defaultValue={link.url}
-                      placeholder="URL"
-                      id={`edit-url-${link.id}`}
-                    />
-                    <textarea
-                      defaultValue={link.comment}
-                      placeholder="Your thoughts about this link..."
-                      id={`edit-comment-${link.id}`}
-                    />
-                    <div className="edit-form-actions">
-                      <button 
-                        className="cancel" 
-                        onClick={() => setEditingLink(null)}
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        className="save" 
-                        onClick={async () => {
-                          try {
-                            const newUrl = document.getElementById(`edit-url-${link.id}`).value;
-                            const newComment = document.getElementById(`edit-comment-${link.id}`).value;
-                            
-                            if (!newUrl || !newUrl.match(/^https?:\/\/.+/)) {
-                              setError('Please enter a valid URL starting with http:// or https://');
-                              return;
-                            }
+      <div className="add-links-section">
+        <h2>Add New Link</h2>
+        <form onSubmit={handleSaveLink} className="form-group">
+          <div className="link-entry">
+            <input
+              type="url"
+              value={url}
+              onChange={handleUrlChange}
+              placeholder="Enter URL"
+              className="link-input"
+              required
+            />
+            {isManualEntry && (
+              <>
+                <input
+                  type="text"
+                  value={manualTitle}
+                  onChange={(e) => setManualTitle(e.target.value)}
+                  placeholder="Enter title"
+                  className="link-input"
+                  required
+                />
+                <textarea
+                  value={manualDescription}
+                  onChange={(e) => setManualDescription(e.target.value)}
+                  placeholder="Enter description (optional)"
+                  className="comment-input"
+                />
+              </>
+            )}
+          </div>
+          {error && <p className="error-message">{error}</p>}
+          <button
+            type="submit"
+            className="save-link-button"
+            disabled={loading || !url || (isManualEntry && !manualTitle.trim())}
+          >
+            {loading ? 'Saving...' : 'Save Link'}
+          </button>
+        </form>
+      </div>
 
-                            console.log('Fetching metadata for edited URL:', newUrl);
-                            const result = await fetchUrlMetadata(newUrl);
-                            console.log('Metadata result:', result);
-
-                            const preview = {
-                              title: result.data.title || getHostname(newUrl),
-                              description: result.data.description || '',
-                              image: result.data.image || '',
-                              url: newUrl
-                            };
-                            
-                            await handleEdit(link.id, {
-                              url: newUrl,
-                              comment: newComment,
-                              preview: preview
-                            });
-                          } catch (error) {
-                            console.error('Edit save error:', error);
-                            setError('Failed to update link: ' + error.message);
-                          }
-                        }}
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))
+      <div className="links-section">
+        <h2>Link Queue</h2>
+        <div className="link-list">
+          {loadingLinks ? (
+            <p>Loading links...</p>
+          ) : toReadLinks.length > 0 ? (
+            toReadLinks.map(renderLinkCard)
           ) : (
-            <div>No links saved yet</div>
+            <p>No links in queue</p>
           )}
         </div>
       </div>
 
-      {showShareSuccess && (
-        <div className="share-success-popup">
-          <div className="share-success-content">
-            <div className="success-icon">✓</div>
-            <p>Links shared successfully!</p>
-          </div>
+      <div className="links-section">
+        <h2>Linked</h2>
+        <div className="link-list">
+          {loadingLinks ? (
+            <p>Loading links...</p>
+          ) : readLinks.length > 0 ? (
+            groupLinksByWeek(readLinks).map(group => (
+              <div key={`${group.year}-${group.weekNo}`} className="week-group">
+                <h3 className="week-header">Week {group.weekNo}, {group.year}</h3>
+                {group.links.map(renderLinkCard)}
+              </div>
+            ))
+          ) : (
+            <p>No linked links</p>
+          )}
         </div>
-      )}
+      </div>
+
+      {renderShareModal()}
+      
+      <ConfirmModal
+        isOpen={confirmShare}
+        onClose={() => setConfirmShare(false)}
+        onConfirm={handleShareMonthlyReLink}
+        title={`Share ${currentMonthName} ReLink`}
+        message={
+          <div className="space-y-4">
+            <p>You're about to share your {currentMonthName} {currentYear} ReLink with your friends.</p>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="font-medium mb-2">Selected Links:</p>
+              <ol className="list-decimal list-inside space-y-2">
+                {selectedLinks.map(id => {
+                  const link = readLinks.find(l => l.id === id);
+                  return link ? (
+                    <li key={id} className="text-gray-700">
+                      {link.title}
+                    </li>
+                  ) : null;
+                })}
+              </ol>
+            </div>
+          </div>
+        }
+        confirmText={`Share ${currentMonthName} ReLink`}
+        type="primary"
+      />
     </div>
   );
-} 
+};
+
+export default Vault; 
