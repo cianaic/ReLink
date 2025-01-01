@@ -1,163 +1,101 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { updateUserProfile, uploadProfilePicture, logActivity } from '../utils/database';
+import { updateProfile } from '../services/userService';
 
-export default function EditProfile() {
-  const [error, setError] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [bio, setBio] = useState('');
-  const [loading, setLoading] = useState(false);
-  const fileInputRef = useRef();
+const EditProfile = ({ onClose }) => {
   const { currentUser, userProfile, refreshUserProfile } = useAuth();
-  const navigate = useNavigate();
+  const [displayName, setDisplayName] = useState(userProfile?.displayName || '');
+  const [bio, setBio] = useState(userProfile?.bio || '');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (userProfile) {
-      setDisplayName(userProfile.displayName || '');
-      setBio(userProfile.bio || '');
-    }
-  }, [userProfile]);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-  async function handleProfileUpdate() {
     try {
-      setLoading(true);
-      const updates = {};
-      
-      if (displayName || userProfile?.displayName) {
-        updates.displayName = displayName || userProfile?.displayName;
-      }
-      
-      if (bio || userProfile?.bio) {
-        updates.bio = bio || userProfile?.bio;
-      }
-
-      if (Object.keys(updates).length > 0) {
-        await updateUserProfile(currentUser.uid, updates);
-        await logActivity(currentUser.uid, 'profile_update', 'Updated profile information');
-        await refreshUserProfile();
-        navigate('/profile');
-      }
+      await updateProfile(currentUser.uid, {
+        displayName,
+        bio,
+      });
+      await refreshUserProfile();
+      onClose();
     } catch (error) {
-      console.error('Profile update error:', error);
+      console.error('Error updating profile:', error);
       setError('Failed to update profile');
     } finally {
       setLoading(false);
     }
-  }
-
-  async function handlePictureUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    try {
-      setLoading(true);
-      setError('');
-      
-      if (!file.type.startsWith('image/')) {
-        setError('Please select an image file');
-        return;
-      }
-      
-      if (file.size > 5 * 1024 * 1024) {
-        setError('Image must be less than 5MB');
-        return;
-      }
-
-      await uploadProfilePicture(currentUser.uid, file);
-      await logActivity(currentUser.uid, 'profile_picture_update', 'Updated profile picture');
-      await refreshUserProfile();
-    } catch (error) {
-      console.error('Upload error:', error);
-      setError(error.message || 'Failed to upload profile picture');
-    } finally {
-      setLoading(false);
-    }
-  }
+  };
 
   return (
-    <div className="edit-profile-container">
-      <h2>Edit Profile</h2>
-      {error && <div className="error">{error}</div>}
-
-      <div className="edit-profile-section">
-        <div className="profile-photo-section">
-          <h3>Profile Photo</h3>
-          <div className="profile-photo-container">
-            {currentUser.photoURL ? (
-              <img 
-                src={`${currentUser.photoURL}?${new Date().getTime()}`} 
-                alt="Profile" 
-                className="profile-photo"
-                onError={(e) => {
-                  console.error('Error loading profile image');
-                  e.target.src = '/default-avatar.png';
-                  setError('');
-                }}
-              />
-            ) : (
-              <div className="profile-photo-placeholder">
-                {userProfile?.displayName?.[0] || currentUser.email[0]}
-              </div>
-            )}
-            <button 
-              onClick={() => fileInputRef.current.click()} 
-              className="change-photo-button"
-              disabled={loading}
-            >
-              {loading ? 'Uploading...' : 'Change Photo'}
-            </button>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handlePictureUpload}
-              style={{ display: 'none' }}
-              accept="image/*"
-            />
-          </div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold text-gray-900">Edit Profile</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            ✕
+          </button>
         </div>
 
-        <div className="profile-info-section">
-          <h3>Profile Information</h3>
-          <div className="form-group">
-            <label>Display Name</label>
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Display Name
+            </label>
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Enter your display name"
-              className="form-input"
             />
           </div>
 
-          <div className="form-group">
-            <label>Bio</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Bio
+            </label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="Tell us about yourself"
-              className="form-input bio-input"
+              rows={3}
             />
           </div>
-        </div>
 
-        <div className="edit-profile-actions">
-          <button 
-            onClick={handleProfileUpdate}
-            disabled={loading}
-            className="save-button"
-          >
-            {loading ? 'Saving Changes...' : 'Save Changes'}
-          </button>
-          <button 
-            onClick={() => navigate('/profile')}
-            className="cancel-button"
-            disabled={loading}
-          >
-            Cancel
-          </button>
-        </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50"
+              disabled={loading}
+            >
+              {loading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
-} 
+};
+
+export default EditProfile; 

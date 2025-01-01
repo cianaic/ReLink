@@ -114,52 +114,6 @@ exports.uploadProfilePicture = onRequest(
   }
 );
 
-// Fetch URL metadata function
-exports.fetchUrlMetadata = onRequest(
-  { 
-    cors: true,
-    maxInstances: 10
-  },
-  async (req, res) => {
-    try {
-      // Verify Firebase ID token
-      const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        res.status(403).json({ error: 'Unauthorized' });
-        return;
-      }
-
-      const idToken = authHeader.split('Bearer ')[1];
-      await admin.auth().verifyIdToken(idToken);
-
-      // Get URL from request body
-      const { url } = req.body;
-      if (!url) {
-        res.status(400).json({ error: 'URL is required' });
-        return;
-      }
-
-      // Call iframely API
-      const iframelyUrl = `https://iframe.ly/api/iframely?url=${encodeURIComponent(url)}&api_key=${functions.config().iframely.key}`;
-      const response = await axios.get(iframelyUrl);
-      
-      res.json({
-        data: {
-          title: response.data.meta?.title || response.data.title || url,
-          description: response.data.meta?.description || '',
-          image: response.data.links?.thumbnail?.[0]?.href || '',
-          author: response.data.meta?.author || '',
-          site: response.data.meta?.site || '',
-          date: response.data.meta?.date || ''
-        }
-      });
-    } catch (error) {
-      console.error('Error:', error);
-      res.status(500).json({ error: error.message });
-    }
-  }
-);
-
 // Function to manage feed operations
 exports.manageFeed = onCall(
   { 

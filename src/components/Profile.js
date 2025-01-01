@@ -1,191 +1,169 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { getFriends, getPendingRequests, acceptFriendRequest, rejectFriendRequest } from '../services/friendService';
+import { Navigate } from 'react-router-dom';
+import { getFriends } from '../services/friendService';
+import EditProfile from './EditProfile';
 
-export default function Profile() {
-  const [error, setError] = useState('');
-  const [friends, setFriends] = useState([]);
-  const [pendingRequests, setPendingRequests] = useState([]);
-  const [showShareLink, setShowShareLink] = useState(false);
+const Profile = () => {
   const { currentUser, userProfile, logout } = useAuth();
-  const navigate = useNavigate();
-
-  async function handleLogout() {
-    setError('');
-    try {
-      await logout();
-      navigate('/login');
-    } catch {
-      setError('Failed to log out');
-    }
-  }
+  const [isEditing, setIsEditing] = useState(false);
+  const [friends, setFriends] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadFriendsData = async () => {
+    const loadFriends = async () => {
       if (currentUser) {
         try {
-          const [friendsData, requestsData] = await Promise.all([
-            getFriends(currentUser.uid),
-            getPendingRequests(currentUser.uid)
-          ]);
+          const friendsData = await getFriends(currentUser.uid);
           setFriends(friendsData);
-          setPendingRequests(requestsData);
         } catch (error) {
-          console.error('Error loading friends data:', error);
-          setError('Failed to load friends data');
+          console.error('Error loading friends:', error);
+        } finally {
+          setLoading(false);
         }
       }
     };
-    loadFriendsData();
+
+    loadFriends();
   }, [currentUser]);
 
-  const handleAcceptRequest = async (requesterId) => {
+  if (!currentUser) {
+    return <Navigate to="/" />;
+  }
+
+  const handleLogout = async () => {
     try {
-      await acceptFriendRequest(currentUser.uid, requesterId);
-      const [friendsData, requestsData] = await Promise.all([
-        getFriends(currentUser.uid),
-        getPendingRequests(currentUser.uid)
-      ]);
-      setFriends(friendsData);
-      setPendingRequests(requestsData);
+      await logout();
     } catch (error) {
-      console.error('Error accepting friend request:', error);
-      setError('Failed to accept friend request');
+      console.error('Failed to log out:', error);
     }
   };
 
-  const handleRejectRequest = async (requesterId) => {
-    try {
-      await rejectFriendRequest(currentUser.uid, requesterId);
-      const requestsData = await getPendingRequests(currentUser.uid);
-      setPendingRequests(requestsData);
-    } catch (error) {
-      console.error('Error rejecting friend request:', error);
-      setError('Failed to reject friend request');
-    }
+  const handleShareInvite = () => {
+    const inviteLink = `${window.location.origin}/connect/${currentUser.uid}`;
+    navigator.clipboard.writeText(inviteLink);
+    // Could add a toast notification here
   };
-
-  const FriendsList = () => (
-    <div className="friends-section">
-      <h3>Connect with Friends</h3>
-      <div className="share-profile">
-        <button 
-          className="share-profile-button"
-          onClick={() => {
-            const shareLink = `${window.location.origin}/connect/${currentUser.uid}`;
-            navigator.clipboard.writeText(shareLink);
-            setShowShareLink(true);
-            setTimeout(() => setShowShareLink(false), 3000);
-          }}
-        >
-          Share Invite Link
-        </button>
-        {showShareLink && (
-          <div className="share-link-popup">Link copied to clipboard!</div>
-        )}
-      </div>
-      
-      {pendingRequests.length > 0 && (
-        <div className="pending-requests">
-          <h4>Pending Requests ({pendingRequests.length})</h4>
-          {pendingRequests.map(request => (
-            <div key={request.uid} className="request-item">
-              <div className="request-user">
-                <img src={request.photoURL || '/default-avatar.png'} alt={request.displayName} />
-                <span>{request.displayName || 'Anonymous'}</span>
-              </div>
-              <div className="request-actions">
-                <button 
-                  onClick={() => handleAcceptRequest(request.uid)}
-                  className="accept-button"
-                >
-                  Accept
-                </button>
-                <button 
-                  onClick={() => handleRejectRequest(request.uid)}
-                  className="reject-button"
-                >
-                  Reject
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="friends-list">
-        <h4>Your Friends ({friends.length})</h4>
-        {friends.length > 0 ? (
-          friends.map(friend => (
-            <div key={friend.uid} className="friend-item">
-              <img src={friend.photoURL || '/default-avatar.png'} alt={friend.displayName} />
-              <span>{friend.displayName || 'Anonymous'}</span>
-            </div>
-          ))
-        ) : (
-          <p className="no-friends">
-            You haven't connected with any friends yet. Share your profile link to get started!
-          </p>
-        )}
-      </div>
-    </div>
-  );
 
   return (
-    <div className="profile-container">
-      <h2>Profile</h2>
-      {error && <div className="error">{error}</div>}
-      
-      <div className="profile-info">
-        <div className="profile-photo-container">
-          {currentUser.photoURL ? (
-            <img 
-              src={`${currentUser.photoURL}?${new Date().getTime()}`} 
-              alt="Profile" 
-              className="profile-photo"
-              onError={(e) => {
-                console.error('Error loading profile image');
-                e.target.src = '/default-avatar.png';
-                setError('');
-              }}
-            />
-          ) : (
-            <div className="profile-photo-placeholder">
-              {userProfile?.displayName?.[0] || currentUser.email[0]}
+    <>
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Profile Section */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-4">
+                {userProfile?.photoURL ? (
+                  <img
+                    src={userProfile.photoURL}
+                    alt={userProfile.displayName}
+                    className="w-16 h-16 rounded-full"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-2xl font-medium text-gray-600">
+                      {userProfile?.displayName?.[0] || currentUser.email?.[0]}
+                    </span>
+                  </div>
+                )}
+                <h2 className="text-2xl font-semibold text-gray-900">Profile</h2>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Log Out
+              </button>
             </div>
-          )}
-          <div className="profile-actions">
-            <Link to="/edit-profile" className="edit-profile-link">
-              Edit Profile
-            </Link>
-            <Link to="/settings" className="settings-link">
-              Settings
-            </Link>
-          </div>
-        </div>
 
-        <div className="profile-details">
-          <div className="info-group">
-            <label>Email</label>
-            <p>{currentUser.email}</p>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Email
+                </label>
+                <p className="text-gray-900">{currentUser.email}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Display Name
+                </label>
+                <p className="text-gray-900">{userProfile?.displayName || 'Not set'}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">
+                  Bio
+                </label>
+                <p className="text-gray-900">{userProfile?.bio || 'No bio yet'}</p>
+              </div>
+
+              <button
+                onClick={() => setIsEditing(true)}
+                className="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+              >
+                Edit Profile
+              </button>
+            </div>
           </div>
-          <div className="info-group">
-            <label>Display Name</label>
-            <p>{userProfile?.displayName || 'Not set'}</p>
-          </div>
-          <div className="info-group">
-            <label>Bio</label>
-            <p>{userProfile?.bio || 'No bio yet'}</p>
+
+          {/* Friends Section */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">Connect with Friends</h2>
+            
+            <button 
+              onClick={handleShareInvite}
+              className="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors mb-8"
+            >
+              Share Invite Link
+            </button>
+
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Your Friends ({friends.length})
+              </h3>
+              
+              <div className="space-y-4">
+                {loading ? (
+                  <p className="text-gray-500">Loading friends...</p>
+                ) : friends.length === 0 ? (
+                  <p className="text-gray-500">No friends yet. Share your invite link to connect!</p>
+                ) : (
+                  friends.map((friend) => (
+                    <div key={friend.uid} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      {friend.photoURL ? (
+                        <img
+                          src={friend.photoURL}
+                          alt={friend.displayName}
+                          className="w-10 h-10 rounded-full"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-lg font-medium text-gray-600">
+                            {friend.displayName?.[0] || friend.email?.[0]}
+                          </span>
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-medium text-gray-900">{friend.displayName || 'Anonymous'}</p>
+                        {friend.email && (
+                          <p className="text-sm text-gray-500">{friend.email}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <FriendsList />
-
-      <button onClick={handleLogout} className="logout-button">
-        Log Out
-      </button>
-    </div>
+      {isEditing && (
+        <EditProfile onClose={() => setIsEditing(false)} />
+      )}
+    </>
   );
-} 
+};
+
+export default Profile; 

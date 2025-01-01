@@ -1,7 +1,11 @@
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-// Get public profile information that doesn't require authentication
+export const updateProfile = async (userId, updates) => {
+  const userRef = doc(db, 'users', userId);
+  await updateDoc(userRef, updates);
+};
+
 export const getPublicProfile = async (userId) => {
   try {
     const userDoc = await getDoc(doc(db, 'users', userId));

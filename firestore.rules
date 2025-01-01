@@ -5,6 +5,32 @@ service cloud.firestore {
       return request.auth.uid == 'VGKFRWqEzyQMor0Xg4qvAyEWivA3';
     }
 
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /friends/{friendId} {
+      // Allow users to read friend records where they are either the user or the friend
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.userId ||
+        request.auth.uid == resource.data.friendId
+      );
+      
+      // Allow users to create friend records where they are the user
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Allow users to update or delete friend records where they are either the user or the friend
+      allow update, delete: if isAuthenticated() && (
+        request.auth.uid == resource.data.userId ||
+        request.auth.uid == resource.data.friendId
+      );
+    }
+
     match /users/{userId} {
       // Allow anyone to read basic profile info
       allow read: if true;
@@ -70,6 +96,16 @@ service cloud.firestore {
         resource.data.authorId == request.auth.uid || 
         isAdmin()
       );
+    }
+    
+    match /links/{linkId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+    }
+    
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

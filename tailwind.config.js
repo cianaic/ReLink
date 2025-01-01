@@ -4,7 +4,17 @@ module.exports = {
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        primary: {
+          DEFAULT: '#1a73e8',
+          hover: '#1557b0',
+        },
+      },
+      gridTemplateColumns: {
+        'layout': '250px 1fr',
+      },
+    },
   },
   plugins: [],
 }

@@ -1,0 +1,1547 @@
+[debug] [2024-12-29T17:43:39.933Z] ----------------------------------------------------------------------
+[debug] [2024-12-29T17:43:39.940Z] Command:       /usr/local/bin/node /usr/local/bin/firebase serve
+[debug] [2024-12-29T17:43:39.940Z] CLI Version:   13.29.1
+[debug] [2024-12-29T17:43:39.940Z] Platform:      darwin
+[debug] [2024-12-29T17:43:39.940Z] Node Version:  v21.1.0
+[debug] [2024-12-29T17:43:39.941Z] Time:          Sun Dec 29 2024 17:43:39 GMT+0000 (Greenwich Mean Time)
+[debug] [2024-12-29T17:43:39.941Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-12-29T17:43:40.078Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-12-29T17:43:40.079Z] > authorizing via signed-in user (app.relink@gmail.com)
+[debug] [2024-12-29T17:43:40.079Z] [iam] checking project curate-f809d for permissions ["firebase.projects.get"]
+[debug] [2024-12-29T17:43:40.079Z] Checked if tokens are valid: true, expires at: 1735496327794
+[debug] [2024-12-29T17:43:40.079Z] Checked if tokens are valid: true, expires at: 1735496327794
+[debug] [2024-12-29T17:43:40.080Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/curate-f809d:testIamPermissions [none]
+[debug] [2024-12-29T17:43:40.080Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/curate-f809d:testIamPermissions x-goog-quota-user=projects/curate-f809d
+[debug] [2024-12-29T17:43:40.080Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/curate-f809d:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2024-12-29T17:43:40.266Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/curate-f809d:testIamPermissions 200
+[debug] [2024-12-29T17:43:40.267Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/curate-f809d:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2024-12-29T17:43:40.267Z] Checked if tokens are valid: true, expires at: 1735496327794
+[debug] [2024-12-29T17:43:40.267Z] Checked if tokens are valid: true, expires at: 1735496327794
+[debug] [2024-12-29T17:43:40.267Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/curate-f809d [none]
+[debug] [2024-12-29T17:43:40.947Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/curate-f809d 200
+[debug] [2024-12-29T17:43:40.950Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/curate-f809d {"projectNumber":"960840861355","projectId":"curate-f809d","lifecycleState":"ACTIVE","name":"ReLink","labels":{"firebase":"enabled"},"createTime":"2024-10-20T15:39:28.747619Z"}
+[info] 
+[info] === Serving from '/Users/cianmcglynn/Code/Projects/ReLink'...
+[info] 
+[debug] [2024-12-29T17:43:40.971Z] Checked if tokens are valid: true, expires at: 1735496327794
+[debug] [2024-12-29T17:43:40.972Z] Checked if tokens are valid: true, expires at: 1735496327794
+[debug] [2024-12-29T17:43:40.974Z] defaultcredentials: writing to file /Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json
+[debug] [2024-12-29T17:43:40.974Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/curate-f809d/sites 
+[debug] [2024-12-29T17:43:40.977Z] Setting GAC to /Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json {"metadata":{"emulator":{"name":"functions"},"message":"Setting GAC to /Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json"}}
+[debug] [2024-12-29T17:43:40.978Z] Checked if tokens are valid: true, expires at: 1735496327794
+[debug] [2024-12-29T17:43:40.978Z] Checked if tokens are valid: true, expires at: 1735496327794
+[debug] [2024-12-29T17:43:40.978Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/curate-f809d/adminSdkConfig [none]
+[debug] [2024-12-29T17:43:41.335Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/curate-f809d/adminSdkConfig 200
+[debug] [2024-12-29T17:43:41.335Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/curate-f809d/adminSdkConfig {"projectId":"curate-f809d","storageBucket":"curate-f809d.firebasestorage.app"}
+[debug] [2024-12-29T17:43:42.244Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/curate-f809d/sites 200
+[debug] [2024-12-29T17:43:42.245Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/curate-f809d/sites {"sites":[{"name":"projects/curate-f809d/sites/curate-f809d","defaultUrl":"https://curate-f809d.web.app","type":"DEFAULT_SITE"}]}
+[debug] [2024-12-29T17:43:42.245Z] Checked if tokens are valid: true, expires at: 1735496327794
+[debug] [2024-12-29T17:43:42.245Z] Checked if tokens are valid: true, expires at: 1735496327794
+[debug] [2024-12-29T17:43:42.246Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/curate-f809d/webApps/-/config [none]
+[debug] [2024-12-29T17:43:42.767Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/curate-f809d/webApps/-/config 200
+[debug] [2024-12-29T17:43:42.768Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/curate-f809d/webApps/-/config {"projectId":"curate-f809d","appId":"1:960840861355:web:7459536ff753bace8d99ee","storageBucket":"curate-f809d.firebasestorage.app","apiKey":"AIzaSyACIxNAao0bBiGg-jpk2cPGtSTtXNLXGfE","authDomain":"curate-f809d.firebaseapp.com","messagingSenderId":"960840861355","measurementId":"G-S2N9BH7GEX"}
+[debug] [2024-12-29T17:43:42.779Z] Checked if tokens are valid: true, expires at: 1735496327794
+[debug] [2024-12-29T17:43:42.779Z] Checked if tokens are valid: true, expires at: 1735496327794
+[debug] [2024-12-29T17:43:42.779Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/curate-f809d [none]
+[debug] [2024-12-29T17:43:43.063Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/curate-f809d 200
+[debug] [2024-12-29T17:43:43.064Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/curate-f809d {"projectId":"curate-f809d","projectNumber":"960840861355","displayName":"ReLink","name":"projects/curate-f809d","resources":{"hostingSite":"curate-f809d"},"state":"ACTIVE","etag":"1_08a084ad-bfff-454a-a0e0-7923da14b30d"}
+[info] i  functions: Watching "/Users/cianmcglynn/Code/Projects/ReLink/functions" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"/Users/cianmcglynn/Code/Projects/ReLink/functions\" for Cloud Functions..."}}
+[info] i  hosting[curate-f809d]: Serving hosting files from: build {"metadata":{"emulator":{"name":"hosting"},"message":"Serving hosting files from: \u001b[1mbuild\u001b[22m"}}
+[info] ✔  hosting[curate-f809d]: Local server: http://localhost:5002 {"metadata":{"emulator":{"name":"hosting"},"message":"Local server: \u001b[4m\u001b[1mhttp://localhost:5002\u001b[22m\u001b[24m"}}
+[debug] [2024-12-29T17:43:43.160Z] Validating nodejs source
+[debug] [2024-12-29T17:43:44.055Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T17:43:44.055Z] Building nodejs source
+[debug] [2024-12-29T17:43:44.056Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T17:43:44.057Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T17:43:44.061Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8888
+
+[error] (node:87568) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T17:43:44.411Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[info] i  functions: Watching "/Users/cianmcglynn/Code/Projects/ReLink/functions/python" for Cloud Functions... {"metadata":{"emulator":{"name":"functions"},"message":"Watching \"/Users/cianmcglynn/Code/Projects/ReLink/functions/python\" for Cloud Functions..."}}
+[debug] [2024-12-29T17:43:49.430Z] Customer code is not Node
+[debug] [2024-12-29T17:43:49.431Z] Validating python source
+[debug] [2024-12-29T17:43:49.431Z] Building python source
+[debug] [2024-12-29T17:43:49.432Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T17:43:49.434Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T17:43:49.483Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T17:43:49.486Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T17:43:49.486Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+Press CTRL+C to quit
+
+[error] 127.0.0.1 - - [29/Dec/2024 17:43:49] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T17:43:49.850Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 17:43:49] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 87584 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[debug] [2024-12-29T19:14:12.417Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:14:12.467Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:14:13.476Z] Validating nodejs source
+[debug] [2024-12-29T19:14:14.373Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:14:14.373Z] Building nodejs source
+[debug] [2024-12-29T19:14:14.374Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:14:14.378Z] Customer code is not Node
+[debug] [2024-12-29T19:14:14.379Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:14:14.382Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:14:14.387Z] Validating python source
+[debug] [2024-12-29T19:14:14.387Z] Building python source
+[debug] [2024-12-29T19:14:14.388Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:14:14.388Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:14:14.473Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:14:14.478Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:14:14.478Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8827
+
+[error] (node:88525) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:14:14.970Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[debug] [2024-12-29T19:14:15.166Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[debug] [2024-12-29T19:14:15.166Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[error] 127.0.0.1 - - [29/Dec/2024 19:14:15] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:14:15.194Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:14:15] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 88529 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[debug] [2024-12-29T19:14:16.169Z] Validating nodejs source
+[debug] [2024-12-29T19:14:16.596Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:14:16.596Z] Building nodejs source
+[debug] [2024-12-29T19:14:16.596Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:14:16.597Z] Customer code is not Node
+[debug] [2024-12-29T19:14:16.598Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:14:16.599Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:14:16.600Z] Validating python source
+[debug] [2024-12-29T19:14:16.600Z] Building python source
+[debug] [2024-12-29T19:14:16.600Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:14:16.601Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:14:16.631Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:14:16.636Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:14:16.636Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8119
+
+[error] (node:88538) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:14:16.822Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:14:16] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:14:16.963Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:14:16] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 88542 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[debug] [2024-12-29T19:15:09.191Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:15:09.208Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:15:10.203Z] Validating nodejs source
+[debug] [2024-12-29T19:15:10.939Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:15:10.940Z] Building nodejs source
+[debug] [2024-12-29T19:15:10.940Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:15:10.942Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:15:10.944Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:15:10.948Z] Customer code is not Node
+[debug] [2024-12-29T19:15:10.950Z] Validating python source
+[debug] [2024-12-29T19:15:10.950Z] Building python source
+[debug] [2024-12-29T19:15:10.951Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:15:10.951Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:15:11.051Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:15:11.056Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:15:11.056Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8799
+
+[error] (node:88655) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:15:11.440Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:15:11] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:15:11.678Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:15:11] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 88659 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[debug] [2024-12-29T19:15:11.754Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[debug] [2024-12-29T19:15:11.754Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[debug] [2024-12-29T19:15:12.758Z] Validating nodejs source
+[debug] [2024-12-29T19:15:13.264Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:15:13.264Z] Building nodejs source
+[debug] [2024-12-29T19:15:13.264Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:15:13.265Z] Customer code is not Node
+[debug] [2024-12-29T19:15:13.266Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:15:13.267Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:15:13.268Z] Validating python source
+[debug] [2024-12-29T19:15:13.268Z] Building python source
+[debug] [2024-12-29T19:15:13.268Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:15:13.268Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:15:13.292Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:15:13.296Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:15:13.297Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8779
+
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[error] (node:88669) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:15:13.581Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[error] 127.0.0.1 - - [29/Dec/2024 19:15:13] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:15:13.670Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:15:13] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 88673 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[debug] [2024-12-29T19:17:12.640Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:17:12.653Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:17:13.659Z] Validating nodejs source
+[debug] [2024-12-29T19:17:14.542Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:17:14.543Z] Building nodejs source
+[debug] [2024-12-29T19:17:14.543Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:17:14.544Z] Customer code is not Node
+[debug] [2024-12-29T19:17:14.544Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:17:14.546Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:17:14.549Z] Validating python source
+[debug] [2024-12-29T19:17:14.549Z] Building python source
+[debug] [2024-12-29T19:17:14.549Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:17:14.549Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:17:14.644Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:17:14.648Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:17:14.648Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8742
+
+[error] (node:88758) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:17:15.037Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:17:15] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:17:15.287Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:17:15] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 88763 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[debug] [2024-12-29T19:17:15.366Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[debug] [2024-12-29T19:17:15.366Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[debug] [2024-12-29T19:17:16.369Z] Validating nodejs source
+[debug] [2024-12-29T19:17:16.893Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:17:16.894Z] Building nodejs source
+[debug] [2024-12-29T19:17:16.894Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:17:16.895Z] Customer code is not Node
+[debug] [2024-12-29T19:17:16.899Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:17:16.905Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:17:16.908Z] Validating python source
+[debug] [2024-12-29T19:17:16.908Z] Building python source
+[debug] [2024-12-29T19:17:16.908Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:17:16.908Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:17:16.948Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:17:16.951Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:17:16.951Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8266
+
+[error] (node:88776) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:17:17.129Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:17:17] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:17:17.295Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:17:17] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 88780 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[debug] [2024-12-29T19:17:23.721Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:17:23.721Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:17:24.723Z] Validating nodejs source
+[debug] [2024-12-29T19:17:25.227Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:17:25.227Z] Building nodejs source
+[debug] [2024-12-29T19:17:25.227Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:17:25.228Z] Customer code is not Node
+[debug] [2024-12-29T19:17:25.229Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:17:25.230Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:17:25.231Z] Validating python source
+[debug] [2024-12-29T19:17:25.231Z] Building python source
+[debug] [2024-12-29T19:17:25.232Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:17:25.232Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:17:25.268Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:17:25.273Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:17:25.273Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8055
+
+[error] (node:88805) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:17:25.467Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[debug] [2024-12-29T19:17:25.704Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[debug] [2024-12-29T19:17:25.704Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[error] 127.0.0.1 - - [29/Dec/2024 19:17:25] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:17:25.720Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:17:25] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 88809 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[debug] [2024-12-29T19:17:26.705Z] Validating nodejs source
+[debug] [2024-12-29T19:17:27.145Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:17:27.146Z] Building nodejs source
+[debug] [2024-12-29T19:17:27.146Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:17:27.147Z] Customer code is not Node
+[debug] [2024-12-29T19:17:27.153Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:17:27.154Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:17:27.155Z] Validating python source
+[debug] [2024-12-29T19:17:27.155Z] Building python source
+[debug] [2024-12-29T19:17:27.155Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:17:27.155Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:17:27.185Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:17:27.187Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:17:27.187Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8207
+
+[error] (node:88820) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:17:27.367Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:17:27] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:17:27.535Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:17:27] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 88824 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[debug] [2024-12-29T19:26:35.082Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:26:35.129Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:26:36.139Z] Validating nodejs source
+[debug] [2024-12-29T19:26:37.255Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:26:37.256Z] Building nodejs source
+[debug] [2024-12-29T19:26:37.256Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:26:37.260Z] Customer code is not Node
+[debug] [2024-12-29T19:26:37.261Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:26:37.265Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:26:37.269Z] Validating python source
+[debug] [2024-12-29T19:26:37.269Z] Building python source
+[debug] [2024-12-29T19:26:37.271Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:26:37.271Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:26:37.368Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:26:37.373Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:26:37.373Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8714
+
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[error] (node:89193) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:26:37.880Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[error] 127.0.0.1 - - [29/Dec/2024 19:26:37] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:26:37.997Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:26:38] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 89197 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[debug] [2024-12-29T19:26:38.064Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[debug] [2024-12-29T19:26:38.064Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[debug] [2024-12-29T19:26:39.066Z] Validating nodejs source
+[debug] [2024-12-29T19:26:39.487Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:26:39.488Z] Building nodejs source
+[debug] [2024-12-29T19:26:39.488Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:26:39.489Z] Customer code is not Node
+[debug] [2024-12-29T19:26:39.490Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:26:39.491Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:26:39.492Z] Validating python source
+[debug] [2024-12-29T19:26:39.492Z] Building python source
+[debug] [2024-12-29T19:26:39.492Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:26:39.492Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:26:39.512Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:26:39.515Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:26:39.515Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8505
+
+[error] (node:89206) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:26:39.695Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:26:39] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:26:39.861Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:26:39] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 89210 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[debug] [2024-12-29T19:30:27.071Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:30:27.114Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:30:28.119Z] Validating nodejs source
+[debug] [2024-12-29T19:30:29.009Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:30:29.009Z] Building nodejs source
+[debug] [2024-12-29T19:30:29.010Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:30:29.014Z] Customer code is not Node
+[debug] [2024-12-29T19:30:29.014Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:30:29.017Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:30:29.024Z] Validating python source
+[debug] [2024-12-29T19:30:29.024Z] Building python source
+[debug] [2024-12-29T19:30:29.024Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:30:29.024Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:30:29.123Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:30:29.128Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:30:29.128Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8389
+
+[error] (node:89286) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:30:29.754Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:30:30] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:30:30.013Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:30:30] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 89292 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[debug] [2024-12-29T19:30:30.092Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[debug] [2024-12-29T19:30:30.092Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[debug] [2024-12-29T19:30:31.094Z] Validating nodejs source
+[debug] [2024-12-29T19:30:31.901Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:30:31.903Z] Building nodejs source
+[debug] [2024-12-29T19:30:31.903Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:30:31.904Z] Customer code is not Node
+[debug] [2024-12-29T19:30:31.905Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:30:31.907Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:30:31.908Z] Validating python source
+[debug] [2024-12-29T19:30:31.908Z] Building python source
+[debug] [2024-12-29T19:30:31.908Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:30:31.908Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:30:31.964Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:30:31.970Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:30:31.970Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8416
+
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+Press CTRL+C to quit
+
+[error] (node:89304) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:30:33.368Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[error] 127.0.0.1 - - [29/Dec/2024 19:30:33] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:30:33.440Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:30:33] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 89308 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[debug] [2024-12-29T19:34:55.733Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:34:55.832Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:34:56.838Z] Validating nodejs source
+[debug] [2024-12-29T19:34:58.162Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:34:58.163Z] Building nodejs source
+[debug] [2024-12-29T19:34:58.163Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:34:58.169Z] Customer code is not Node
+[debug] [2024-12-29T19:34:58.170Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:34:58.175Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:34:58.187Z] Validating python source
+[debug] [2024-12-29T19:34:58.187Z] Building python source
+[debug] [2024-12-29T19:34:58.188Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:34:58.189Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:34:58.280Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:34:58.294Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:34:58.294Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8133
+
+[error] (node:89520) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:34:58.711Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[debug] [2024-12-29T19:34:58.889Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[debug] [2024-12-29T19:34:58.889Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[error] 127.0.0.1 - - [29/Dec/2024 19:34:58] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:34:58.917Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:34:58] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 89524 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[debug] [2024-12-29T19:34:59.895Z] Validating nodejs source
+[debug] [2024-12-29T19:35:00.529Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:35:00.529Z] Building nodejs source
+[debug] [2024-12-29T19:35:00.529Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:35:00.530Z] Customer code is not Node
+[debug] [2024-12-29T19:35:00.531Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:35:00.532Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:35:00.533Z] Validating python source
+[debug] [2024-12-29T19:35:00.533Z] Building python source
+[debug] [2024-12-29T19:35:00.533Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:35:00.534Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:35:00.584Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:35:00.586Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:35:00.586Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8507
+
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[error] (node:89534) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:35:00.926Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[error] 127.0.0.1 - - [29/Dec/2024 19:35:01] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:35:01.004Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:35:01] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 89538 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[debug] [2024-12-29T19:38:54.140Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:38:54.148Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/main.py changed, reloading triggers"}}
+[debug] [2024-12-29T19:38:55.153Z] Validating nodejs source
+[debug] [2024-12-29T19:38:56.232Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:38:56.233Z] Building nodejs source
+[debug] [2024-12-29T19:38:56.233Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:38:56.236Z] Customer code is not Node
+[debug] [2024-12-29T19:38:56.236Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:38:56.240Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:38:56.243Z] Validating python source
+[debug] [2024-12-29T19:38:56.243Z] Building python source
+[debug] [2024-12-29T19:38:56.244Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:38:56.244Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:38:56.358Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:38:56.362Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:38:56.362Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8678
+
+[error] (node:89602) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:38:56.728Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[info]  * Serving Flask app 'serving'
+ * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[debug] [2024-12-29T19:38:56.939Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[debug] [2024-12-29T19:38:56.939Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/python/__pycache__/main.cpython-311.pyc changed, reloading triggers"}}
+[error] 127.0.0.1 - - [29/Dec/2024 19:38:56] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:38:56.964Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:38:56] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 89606 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[debug] [2024-12-29T19:38:57.942Z] Validating nodejs source
+[debug] [2024-12-29T19:38:58.358Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T19:38:58.359Z] Building nodejs source
+[debug] [2024-12-29T19:38:58.359Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T19:38:58.360Z] Customer code is not Node
+[debug] [2024-12-29T19:38:58.360Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:38:58.361Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[debug] [2024-12-29T19:38:58.362Z] Validating python source
+[debug] [2024-12-29T19:38:58.362Z] Building python source
+[debug] [2024-12-29T19:38:58.363Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T19:38:58.363Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","-c","\"import firebase_functions; import os; print(os.path.dirname(firebase_functions.__file__))\""]
+[debug] [2024-12-29T19:38:58.386Z] stdout: /Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions
+
+[debug] [2024-12-29T19:38:58.392Z] Running admin server with args: ["python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""] and env: {"GCLOUD_PROJECT":"curate-f809d","K_REVISION":"1","PORT":"80","GOOGLE_CLOUD_QUOTA_PROJECT":"curate-f809d","FUNCTIONS_EMULATOR":"true","TZ":"UTC","FIREBASE_DEBUG_MODE":"true","FIREBASE_DEBUG_FEATURES":"{\"skipTokenVerification\":true,\"enableCors\":true}","FIREBASE_CONFIG":"{\"storageBucket\":\"curate-f809d.firebasestorage.app\",\"projectId\":\"curate-f809d\"}","GOOGLE_APPLICATION_CREDENTIALS":"/Users/cianmcglynn/.config/firebase/app_relink_gmail.com_application_default_credentials.json","ADMIN_PORT":"8081"} in /Users/cianmcglynn/Code/Projects/ReLink/functions/python
+[debug] [2024-12-29T19:38:58.392Z] Running command with virtualenv: command=., args=["\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/bin/activate\"","&&","python3.11","\"/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py\""]
+[info] Serving at port 8390
+
+[error] (node:89617) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T19:38:58.583Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[info]  * Serving Flask app 'serving'
+
+[info]  * Debug mode: off
+
+[error] WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:8081
+
+[error] Press CTRL+C to quit
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:38:58] "GET /__/functions.yaml HTTP/1.1" 200 -
+
+[debug] [2024-12-29T19:38:58.760Z] Got response from /__/functions.yaml endpoints: {}
+params: []
+requiredAPIs: []
+specVersion: v1alpha1
+
+[error] 127.0.0.1 - - [29/Dec/2024 19:38:58] "GET /__/quitquitquit HTTP/1.1" 200 -
+
+[error] /bin/sh: line 1: 89621 Terminated: 15          python3.11 "/Users/cianmcglynn/Code/Projects/ReLink/functions/python/venv/lib/python3.11/site-packages/firebase_functions/private/serving.py"
+
+[info] ✔  functions: Loaded functions definitions from source: . {"metadata":{"emulator":{"name":"functions"},"message":"Loaded functions definitions from source: ."}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[debug] [2024-12-29T20:54:15.741Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/index.js changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/index.js changed, reloading triggers"}}
+[debug] [2024-12-29T20:54:16.780Z] Validating nodejs source
+[debug] [2024-12-29T20:54:18.100Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T20:54:18.101Z] Building nodejs source
+[debug] [2024-12-29T20:54:18.101Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T20:54:18.104Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T20:54:18.107Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8582
+
+[error] (node:90916) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T20:54:18.528Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}
+[debug] [2024-12-29T20:56:09.484Z] File /Users/cianmcglynn/Code/Projects/ReLink/functions/index.js changed, reloading triggers {"metadata":{"emulator":{"name":"functions"},"message":"File /Users/cianmcglynn/Code/Projects/ReLink/functions/index.js changed, reloading triggers"}}
+[debug] [2024-12-29T20:56:10.507Z] Validating nodejs source
+[debug] [2024-12-29T20:56:11.493Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
+    "@upstash/redis": "^1.28.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^11.0.3"
+  },
+  "private": true
+}
+[debug] [2024-12-29T20:56:11.494Z] Building nodejs source
+[debug] [2024-12-29T20:56:11.494Z] Failed to find version of module node: reached end of search path /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules
+[warn] ⚠  functions: Your requested "node" version "20" doesn't match your global version "21". Using node@21 from host. 
+[debug] [2024-12-29T20:56:11.496Z] Could not find functions.yaml. Must use http discovery
+[debug] [2024-12-29T20:56:11.498Z] Found firebase-functions binary at '/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/.bin/firebase-functions'
+[info] Serving at port 8134
+
+[error] (node:90976) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+[error] TypeError: Cannot read properties of undefined (reading 'redis_url')
+    at Object.<anonymous> (/Users/cianmcglynn/Code/Projects/ReLink/functions/index.js:22:34)
+    at Module._compile (node:internal/modules/cjs/loader:1376:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1435:10)
+    at Module.load (node:internal/modules/cjs/loader:1207:32)
+    at Module._load (node:internal/modules/cjs/loader:1023:12)
+    at Module.require (node:internal/modules/cjs/loader:1235:19)
+    at require (node:internal/modules/helpers:176:18)
+    at loadModule (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:40:16)
+    at loadStack (/Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/runtime/loader.js:157:23)
+    at /Users/cianmcglynn/Code/Projects/ReLink/functions/node_modules/firebase-functions/lib/bin/firebase-functions.js:56:56
+
+[debug] [2024-12-29T20:56:11.982Z] Got response code 400; body Failed to generate manifest from function source: TypeError: Cannot read properties of undefined (reading 'redis_url')
+[error] ⬢  functions: Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error {"metadata":{"emulator":{"name":"functions"},"message":"Failed to load function definition from source: FirebaseError: Functions codebase could not be analyzed successfully. It may have a syntax or runtime error"}}

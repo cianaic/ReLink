@@ -1,0 +1,4 @@
+functions-framework==3.*
+beautifulsoup4==4.12.*
+requests==2.31.*
+flask==2.3.* 
