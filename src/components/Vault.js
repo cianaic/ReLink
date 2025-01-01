@@ -4,6 +4,8 @@ import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc } 
 import { useAuth } from '../contexts/AuthContext';
 import { getLinkMetadata } from '../services/metadataService';
 import '../styles/Vault.css';
+import feedService from '../services/feedService';
+import ConfirmModal from './ConfirmModal';
 
 const getWeekNumber = (date) => {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -37,12 +39,27 @@ const Vault = () => {
   const [editingComment, setEditingComment] = useState('');
   const [editingDateId, setEditingDateId] = useState(null);
   const [editingDate, setEditingDate] = useState('');
+  const [selectedLinkId, setSelectedLinkId] = useState(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareError, setShareError] = useState('');
+  const [selectedLinks, setSelectedLinks] = useState([]);
+  const [isSelectingLinks, setIsSelectingLinks] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [confirmShare, setConfirmShare] = useState(false);
+  const [currentMonthName, setCurrentMonthName] = useState('');
+  const [currentYear, setCurrentYear] = useState('');
 
   useEffect(() => {
     if (currentUser) {
       loadLinks();
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    const now = new Date();
+    setCurrentMonthName(new Intl.DateTimeFormat('en-US', { month: 'long' }).format(now));
+    setCurrentYear(now.getFullYear());
+  }, []);
 
   // Initialize comments state when links load
   useEffect(() => {
@@ -204,12 +221,25 @@ const Vault = () => {
   };
 
   const handleDeleteLink = async (linkId) => {
+    if (!window.confirm('Are you sure you want to delete this link? This action cannot be undone.')) {
+      return;
+    }
+
     try {
-      await deleteDoc(doc(db, 'links', linkId));
-      await loadLinks();
-    } catch (err) {
-      console.error('Error deleting link:', err);
-      setError('Failed to delete link.');
+      const linkRef = doc(db, 'links', linkId);
+      await deleteDoc(linkRef);
+      
+      // Remove the link from state
+      setToReadLinks(toReadLinks.filter(link => link.id !== linkId));
+      setReadLinks(readLinks.filter(link => link.id !== linkId));
+      
+      // Remove from selected links if it was selected
+      if (selectedLinks.includes(linkId)) {
+        setSelectedLinks(selectedLinks.filter(id => id !== linkId));
+      }
+    } catch (error) {
+      console.error('Error deleting link:', error);
+      alert('Failed to delete link. Please try again.');
     }
   };
 
@@ -305,8 +335,105 @@ const Vault = () => {
       });
   };
 
+  const handleShareToFeed = async (linkId) => {
+    setShareLoading(true);
+    setShareError('');
+    try {
+      const link = readLinks.find(l => l.id === linkId) || toReadLinks.find(l => l.id === linkId);
+      if (!link) {
+        throw new Error('Link not found');
+      }
+
+      await feedService.createPost({
+        url: link.url,
+        title: link.title,
+        description: link.description,
+        comment: link.comment,
+        userId: currentUser.uid,
+        authorId: currentUser.uid,
+        authorName: currentUser.displayName || currentUser.email,
+        authorPhotoURL: currentUser.photoURL,
+        createdAt: new Date()
+      });
+
+      setShareError('');
+      // Refresh links to update UI
+      await loadLinks();
+    } catch (error) {
+      console.error('Error sharing to feed:', error);
+      setShareError('Failed to share link to feed. Please try again.');
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
+  const handleShareMonthlyReLink = async () => {
+    setShareLoading(true);
+    setShareError('');
+    try {
+      if (selectedLinks.length !== 5) {
+        throw new Error('Please select exactly 5 links to share');
+      }
+
+      const links = selectedLinks.map(id => 
+        readLinks.find(l => l.id === id) || toReadLinks.find(l => l.id === id)
+      ).filter(Boolean);
+
+      await feedService.createPost({
+        monthlyLinks: links.map(link => ({
+          url: link.url,
+          title: link.title,
+          description: link.description,
+          comment: link.comment
+        })),
+        userId: currentUser.uid,
+        authorId: currentUser.uid,
+        authorName: currentUser.displayName || currentUser.email,
+        authorPhotoURL: currentUser.photoURL,
+        createdAt: new Date(),
+        type: 'monthly'
+      });
+
+      setShareError('');
+      setIsShareModalOpen(false);
+      setSelectedLinks([]);
+      alert('Successfully shared your monthly ReLink!');
+      // Refresh links to update UI
+      await loadLinks();
+    } catch (error) {
+      console.error('Error sharing monthly ReLink:', error);
+      setShareError(error.message || 'Failed to share monthly ReLink. Please try again.');
+    } finally {
+      setShareLoading(false);
+      setConfirmShare(false);
+    }
+  };
+
+  const toggleLinkSelection = (linkId) => {
+    setSelectedLinks(prev => {
+      if (prev.includes(linkId)) {
+        return prev.filter(id => id !== linkId);
+      }
+      if (prev.length >= 5) {
+        return prev;
+      }
+      return [...prev, linkId];
+    });
+  };
+
   const renderLinkCard = (link) => (
-    <div key={link.id} className="link-card">
+    <div key={link.id} className="link-card bg-white rounded-lg shadow-sm p-6 mb-4">
+      {isSelectingLinks && (
+        <div className="absolute top-4 right-4">
+          <input
+            type="checkbox"
+            checked={selectedLinks.includes(link.id)}
+            onChange={() => toggleLinkSelection(link.id)}
+            disabled={!selectedLinks.includes(link.id) && selectedLinks.length >= 5}
+            className="w-5 h-5"
+          />
+        </div>
+      )}
       <div className="link-header">
         <div className="link-title-group">
           {editingTitleId === link.id ? (
@@ -368,38 +495,17 @@ const Vault = () => {
             </>
           )}
         </div>
-        {editingDateId === link.id ? (
-          <div className="edit-date-container">
-            <input
-              type="date"
-              value={editingDate}
-              onChange={(e) => setEditingDate(e.target.value)}
-              className="edit-date-input"
-              onBlur={() => {
-                if (editingDate) {
-                  handleEditDate(link.id, editingDate);
-                } else {
-                  setEditingDateId(null);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') {
-                  setEditingDateId(null);
-                  setEditingDate('');
-                }
-              }}
-              autoFocus
-            />
-          </div>
-        ) : (
-          <span 
-            className="link-date"
-            onClick={() => startEditingDate(link.id, link.createdAt)}
-            title="Click to edit date"
+        <div className="link-actions">
+          <button
+            onClick={() => handleDeleteLink(link.id)}
+            className="text-gray-400 hover:text-red-500 transition-colors p-2"
+            title="Delete link"
           >
-            {new Date(link.createdAt).toLocaleDateString()}
-          </span>
-        )}
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
       </div>
       <div className="link-content">
         {editingCommentId === link.id ? (
@@ -408,24 +514,25 @@ const Vault = () => {
               value={editingComment}
               onChange={(e) => setEditingComment(e.target.value)}
               className="edit-comment-input"
+              placeholder="Add your thoughts..."
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.metaKey) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
                   handleEditComment(link.id, editingComment);
                 } else if (e.key === 'Escape') {
                   setEditingCommentId(null);
                   setEditingComment('');
                 }
               }}
-              placeholder="Add your thoughts..."
               autoFocus
             />
             <div className="edit-comment-actions">
               <button
                 onClick={() => handleEditComment(link.id, editingComment)}
                 className="edit-comment-save"
-                title="Save (⌘ + Enter)"
+                title="Save (Enter)"
               >
-                Save
+                ✓
               </button>
               <button
                 onClick={() => {
@@ -435,7 +542,7 @@ const Vault = () => {
                 className="edit-comment-cancel"
                 title="Cancel (Esc)"
               >
-                Cancel
+                ✕
               </button>
             </div>
           </div>
@@ -464,12 +571,118 @@ const Vault = () => {
     </div>
   );
 
+  const renderShareModal = () => {
+    if (!isShareModalOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">Edit {currentMonthName} ReLink</h2>
+            <button
+              onClick={() => {
+                setIsShareModalOpen(false);
+                setSelectedLinks([]);
+              }}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+
+          <p className="text-gray-600 mb-6">
+            Select your top 5 favorite links from your Linked section to share with your friends.
+            This will be your ReLink for {currentMonthName} {currentYear}.
+          </p>
+
+          <div className="space-y-4">
+            {readLinks.map(link => (
+              <div 
+                key={link.id} 
+                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                  selectedLinks.includes(link.id) 
+                    ? 'border-primary bg-primary bg-opacity-5' 
+                    : 'border-gray-200 hover:border-primary'
+                }`}
+                onClick={() => toggleLinkSelection(link.id)}
+              >
+                <div className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={selectedLinks.includes(link.id)}
+                    onChange={() => toggleLinkSelection(link.id)}
+                    className="mt-1 w-5 h-5"
+                  />
+                  <div className="flex-1">
+                    <h3 className="font-medium text-gray-900">{link.title}</h3>
+                    <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline">
+                      {link.url}
+                    </a>
+                    {link.comment && (
+                      <p className="mt-2 text-gray-600 text-sm">{link.comment}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex items-center justify-between">
+            <span className="text-gray-600">
+              {selectedLinks.length}/5 links selected
+            </span>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setIsShareModalOpen(false);
+                  setSelectedLinks([]);
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => setConfirmShare(true)}
+                disabled={selectedLinks.length !== 5 || shareLoading}
+                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50"
+              >
+                {shareLoading ? 'Sharing...' : `Share ${currentMonthName} ReLink`}
+              </button>
+            </div>
+          </div>
+
+          {shareError && (
+            <div className="mt-4 p-4 bg-red-50 text-red-600 rounded-lg">
+              {shareError}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (!currentUser) {
     return <div className="vault-container">Please sign in to access your vault.</div>;
   }
 
   return (
     <div className="vault-container">
+      <div className="mb-8 flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Your Vault</h1>
+        <button
+          onClick={() => setIsShareModalOpen(true)}
+          className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+        >
+          Edit {currentMonthName} ReLink
+        </button>
+      </div>
+
+      {shareError && (
+        <div className="mb-4 p-4 bg-red-50 text-red-600 rounded-lg">
+          {shareError}
+        </div>
+      )}
+
       <div className="add-links-section">
         <h2>Add New Link</h2>
         <form onSubmit={handleSaveLink} className="form-group">
@@ -542,6 +755,35 @@ const Vault = () => {
           )}
         </div>
       </div>
+
+      {renderShareModal()}
+      
+      <ConfirmModal
+        isOpen={confirmShare}
+        onClose={() => setConfirmShare(false)}
+        onConfirm={handleShareMonthlyReLink}
+        title={`Share ${currentMonthName} ReLink`}
+        message={
+          <div className="space-y-4">
+            <p>You're about to share your {currentMonthName} {currentYear} ReLink with your friends.</p>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="font-medium mb-2">Selected Links:</p>
+              <ol className="list-decimal list-inside space-y-2">
+                {selectedLinks.map(id => {
+                  const link = readLinks.find(l => l.id === id);
+                  return link ? (
+                    <li key={id} className="text-gray-700">
+                      {link.title}
+                    </li>
+                  ) : null;
+                })}
+              </ol>
+            </div>
+          </div>
+        }
+        confirmText={`Share ${currentMonthName} ReLink`}
+        type="primary"
+      />
     </div>
   );
 };
