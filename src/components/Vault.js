@@ -6,6 +6,7 @@ import { getLinkMetadata } from '../services/metadataService';
 import '../styles/Vault.css';
 import feedService from '../services/feedService';
 import ConfirmModal from './ConfirmModal';
+import { Link } from 'react-router-dom';
 
 const getWeekNumber = (date) => {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -435,7 +436,7 @@ const Vault = () => {
   };
 
   const renderLinkCard = (link) => (
-    <div key={link.id} className="link-card bg-white rounded-lg shadow-sm p-6 mb-4">
+    <div key={link.id} className="bg-white rounded-lg shadow p-4 sm:p-6 relative">
       {isSelectingLinks && (
         <div className="absolute top-4 right-4">
           <input
@@ -581,6 +582,24 @@ const Vault = () => {
           {link.isRead ? 'Move to To Link' : 'Move to Linked'}
         </button>
       </div>
+      
+      {/* Add relinked attribution if present */}
+      {link.relinkedFrom && (
+        <div className="mt-2 pt-2 border-t border-gray-100">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span>ReLinked from</span>
+            <Link
+              to={`/profile/${link.relinkedFrom.userId}`}
+              className="font-medium text-primary hover:underline"
+            >
+              @{link.relinkedFrom.userName}
+            </Link>
+            <span className="text-xs">
+              {new Date(link.relinkedFrom.timestamp?.toDate()).toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 

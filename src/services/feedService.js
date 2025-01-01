@@ -352,13 +352,93 @@ const deleteComment = async (postId, commentId, userId) => {
   }
 };
 
+const relinkPost = async (postId, userId, authorId, authorName, linkData = null) => {
+  try {
+    // If linkData is provided, we're relinking an individual link
+    if (linkData) {
+      // Add the individual link to user's vault
+      const linksRef = collection(db, 'links');
+      await addDoc(linksRef, {
+        url: linkData.url,
+        title: linkData.title,
+        description: linkData.description || '',
+        comment: linkData.comment || '',
+        userId: userId,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        relinkedFrom: {
+          userId: authorId,
+          userName: authorName,
+          timestamp: new Date()
+        }
+      });
+
+      return true;
+    }
+
+    // Otherwise, handle full post relinking (legacy code)
+    const postRef = doc(db, 'relinks', postId);
+    const postDoc = await getDoc(postRef);
+    
+    if (!postDoc.exists()) {
+      throw new Error('Post not found');
+    }
+
+    const postData = postDoc.data();
+    
+    // If it's a monthly post, we need to handle multiple links
+    if (postData.type === 'monthly' && postData.monthlyLinks) {
+      // Add each link as a separate vault entry
+      const promises = postData.monthlyLinks.map(link => 
+        addDoc(collection(db, 'links'), {
+          url: link.url,
+          title: link.title,
+          description: link.description || '',
+          comment: link.comment || '',
+          userId: userId,
+          createdAt: new Date().toISOString(),
+          isRead: false,
+          relinkedFrom: {
+            userId: authorId,
+            userName: authorName,
+            timestamp: new Date()
+          }
+        })
+      );
+      await Promise.all(promises);
+    } else {
+      // Add single link to vault
+      await addDoc(collection(db, 'links'), {
+        url: postData.url,
+        title: postData.title,
+        description: postData.description || '',
+        comment: postData.comment || '',
+        userId: userId,
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        relinkedFrom: {
+          userId: authorId,
+          userName: authorName,
+          timestamp: new Date()
+        }
+      });
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error relinking:', error);
+    throw error;
+  }
+};
+
 const feedService = {
   hasPostedThisMonth,
   createPost,
   getFeedPosts,
   deletePost,
   toggleLike,
-  deleteComment
+  deleteComment,
+  relinkPost
 };
 
 export default feedService; 

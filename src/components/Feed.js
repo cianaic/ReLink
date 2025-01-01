@@ -20,6 +20,8 @@ const Feed = () => {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [likingPost, setLikingPost] = useState(null);
   const [deletingComment, setDeletingComment] = useState(null);
+  const [relinkingPost, setRelinkingPost] = useState(null);
+  const [relinkedItems, setRelinkedItems] = useState(new Set());
 
   useEffect(() => {
     const loadConnections = async () => {
@@ -194,6 +196,56 @@ const Feed = () => {
     }
   };
 
+  const handleRelink = async (link, authorId, authorName) => {
+    try {
+      setRelinkingPost(link.url);
+      await feedService.relinkPost(
+        null,
+        currentUser.uid,
+        authorId,
+        authorName,
+        link
+      );
+      // Add to relinked items
+      setRelinkedItems(prev => new Set([...prev, link.url]));
+      
+      // Show toast notification
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-4 right-4 bg-black bg-opacity-80 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 animate-fade-in';
+      toast.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        <span>Link added to your vault!</span>
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.add('animate-fade-out');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    } catch (error) {
+      console.error('Error relinking link:', error);
+      // Show error toast
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-4 right-4 bg-black bg-opacity-80 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 z-50 animate-fade-in';
+      toast.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+        </svg>
+        <span>Failed to relink. Please try again.</span>
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.add('animate-fade-out');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    } finally {
+      setRelinkingPost(null);
+    }
+  };
+
   const renderPost = (post) => (
     <div key={post.id} className="bg-white rounded-lg shadow p-4 sm:p-6 mb-4 sm:mb-6">
       <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
@@ -241,44 +293,110 @@ const Feed = () => {
         <div className="space-y-3 sm:space-y-4">
           {post.monthlyLinks.map((link, index) => (
             <div key={index} className="p-3 sm:p-4 bg-gray-50 rounded-lg">
-              <a 
-                href={link.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="block font-medium text-blue-600 hover:underline text-sm sm:text-base"
-              >
-                {link.title}
-              </a>
-              {link.description && (
-                <p className="mt-1 text-gray-600 text-xs sm:text-sm">{link.description}</p>
-              )}
-              {link.comment && (
-                <p className="mt-2 text-gray-700 italic text-xs sm:text-sm">{link.comment}</p>
+              <div className="flex items-center gap-2">
+                <a 
+                  href={link.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="font-medium text-blue-600 hover:underline text-sm sm:text-base"
+                >
+                  {link.title}
+                </a>
+                {post.userId !== currentUser.uid && (
+                  <button
+                    onClick={() => handleRelink(link, post.userId, post.authorName)}
+                    disabled={relinkingPost === link.url || relinkedItems.has(link.url)}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${
+                      relinkedItems.has(link.url)
+                        ? 'text-primary bg-primary bg-opacity-10 cursor-default'
+                        : 'text-gray-500 hover:bg-gray-100 transition-colors'
+                    }`}
+                    title={relinkedItems.has(link.url) ? 'Added to vault' : 'Add to your vault'}
+                  >
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      className={`h-3.5 w-3.5 ${relinkingPost === link.url ? 'animate-spin' : ''}`}
+                      fill={relinkedItems.has(link.url) ? 'currentColor' : 'none'}
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      {relinkedItems.has(link.url) ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                      )}
+                    </svg>
+                    <span className="font-medium">{relinkedItems.has(link.url) ? 'ReLinked' : 'ReLink'}</span>
+                  </button>
+                )}
+              </div>
+              {(link.description || link.comment) && (
+                <div className="mt-1">
+                  {link.description && (
+                    <p className="text-gray-600 text-xs sm:text-sm">{link.description}</p>
+                  )}
+                  {link.comment && (
+                    <p className="mt-2 text-gray-700 italic text-xs sm:text-sm">{link.comment}</p>
+                  )}
+                </div>
               )}
             </div>
           ))}
         </div>
       ) : (
         <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
-          <a 
-            href={post.url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="block font-medium text-blue-600 hover:underline text-sm sm:text-base"
-          >
-            {post.title}
-          </a>
-          {post.description && (
-            <p className="mt-1 text-gray-600 text-xs sm:text-sm">{post.description}</p>
-          )}
-          {post.comment && (
-            <p className="mt-2 text-gray-700 italic text-xs sm:text-sm">{post.comment}</p>
+          <div className="flex items-center gap-2">
+            <a 
+              href={post.url} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="font-medium text-blue-600 hover:underline text-sm sm:text-base"
+            >
+              {post.title}
+            </a>
+            {post.userId !== currentUser.uid && (
+              <button
+                onClick={() => handleRelink(post, post.userId, post.authorName)}
+                disabled={relinkingPost === post.url || relinkedItems.has(post.url)}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs ${
+                  relinkedItems.has(post.url)
+                    ? 'text-primary bg-primary bg-opacity-10 cursor-default'
+                    : 'text-gray-500 hover:bg-gray-100 transition-colors'
+                }`}
+                title={relinkedItems.has(post.url) ? 'Added to vault' : 'Add to your vault'}
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className={`h-3.5 w-3.5 ${relinkingPost === post.url ? 'animate-spin' : ''}`}
+                  fill={relinkedItems.has(post.url) ? 'currentColor' : 'none'}
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  {relinkedItems.has(post.url) ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  )}
+                </svg>
+                <span className="font-medium">{relinkedItems.has(post.url) ? 'ReLinked' : 'ReLink'}</span>
+              </button>
+            )}
+          </div>
+          {(post.description || post.comment) && (
+            <div className="mt-1">
+              {post.description && (
+                <p className="text-gray-600 text-xs sm:text-sm">{post.description}</p>
+              )}
+              {post.comment && (
+                <p className="mt-2 text-gray-700 italic text-xs sm:text-sm">{post.comment}</p>
+              )}
+            </div>
           )}
         </div>
       )}
 
       <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t">
-        <div className="flex items-center mb-3 sm:mb-4">
+        <div className="flex items-center gap-2 mb-3 sm:mb-4">
           <button
             onClick={() => handleLikePost(post.id)}
             disabled={likingPost === post.id}
@@ -304,6 +422,26 @@ const Feed = () => {
               {(post.likes || []).length || 'Like'}
             </span>
           </button>
+
+          {post.userId !== currentUser.uid && (
+            <button
+              onClick={() => handleRelink(post, post.userId, post.authorName)}
+              disabled={relinkingPost === post.url || relinkedItems.has(post.url)}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm text-gray-500 hover:bg-gray-100 transition-colors`}
+              title={relinkedItems.has(post.url) ? 'Added to vault' : 'Add to your vault'}
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className={`h-4 w-4 ${relinkingPost === post.url ? 'animate-spin' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              <span className="font-medium">{relinkedItems.has(post.url) ? 'ReLinked' : 'ReLink'}</span>
+            </button>
+          )}
         </div>
 
         {post.comments?.length > 0 && (
