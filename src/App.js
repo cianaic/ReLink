@@ -7,6 +7,7 @@ import Vault from './components/Vault';
 import Feed from './components/Feed';
 import Profile from './components/Profile';
 import Admin from './components/Admin';
+import PublicProfile from './components/PublicProfile';
 import './index.css';
 
 // Loading fallback component
@@ -28,6 +29,7 @@ function App() {
               <Route path="/feed" element={<Feed />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/profile/:userId" element={<PublicProfile />} />
             </Routes>
           </Suspense>
         </Layout>

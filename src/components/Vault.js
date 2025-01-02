@@ -4,7 +4,7 @@ import { collection, query, where, getDocs, addDoc, updateDoc, doc, deleteDoc } 
 import { useAuth } from '../contexts/AuthContext';
 import { getLinkMetadata } from '../services/metadataService';
 import '../styles/Vault.css';
-import feedService from '../services/feedService';
+import feedService, { getCurrentMonthPost } from '../services/feedService';
 import ConfirmModal from './ConfirmModal';
 import { Link } from 'react-router-dom';
 
@@ -49,10 +49,19 @@ const Vault = () => {
   const [confirmShare, setConfirmShare] = useState(false);
   const [currentMonthName, setCurrentMonthName] = useState('');
   const [currentYear, setCurrentYear] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmModalConfig, setConfirmModalConfig] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAlert, setShowAlert] = useState({});
+  const [hasSharedThisMonth, setHasSharedThisMonth] = useState(false);
+  const [currentMonthPost, setCurrentMonthPost] = useState(null);
+  const [canEditMonthlyPost, setCanEditMonthlyPost] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
       loadLinks();
+      checkMonthlyShare();
     }
   }, [currentUser]);
 
@@ -79,6 +88,20 @@ const Vault = () => {
       }
     };
   }, [debouncedSaveTimeout]);
+
+  useEffect(() => {
+    // Check for URL parameter when component mounts
+    const params = new URLSearchParams(window.location.search);
+    const urlParam = params.get('url');
+    
+    if (urlParam) {
+      setUrl(urlParam);
+      // Trigger metadata fetch for the URL
+      handleUrlChange({ target: { value: urlParam } });
+      // Clean up the URL parameter
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const loadLinks = async () => {
     if (!currentUser) return;
@@ -298,17 +321,8 @@ const Vault = () => {
   const handleEditDate = async (linkId, newDate) => {
     try {
       const linkRef = doc(db, 'links', linkId);
-      const newDateISO = new Date(newDate).toISOString();
-      await updateDoc(linkRef, { createdAt: newDateISO });
-      
-      // Update state locally instead of reloading
-      setReadLinks(prevLinks => {
-        const updatedLinks = prevLinks.map(link => 
-          link.id === linkId ? { ...link, createdAt: newDateISO } : link
-        );
-        return updatedLinks;
-      });
-      
+      await updateDoc(linkRef, { createdAt: newDate });
+      await loadLinks();
       setEditingDateId(null);
       setEditingDate('');
     } catch (err) {
@@ -319,10 +333,7 @@ const Vault = () => {
 
   const startEditingDate = (linkId, currentDate) => {
     setEditingDateId(linkId);
-    // Format date to YYYY-MM-DD for input
-    const date = new Date(currentDate);
-    const formattedDate = date.toISOString().split('T')[0];
-    setEditingDate(formattedDate);
+    setEditingDate(currentDate);
   };
 
   const groupLinksByWeek = (links) => {
@@ -408,6 +419,9 @@ const Vault = () => {
         type: 'monthly'
       });
 
+      // Refresh monthly share status
+      await checkMonthlyShare();
+
       setShareError('');
       setIsShareModalOpen(false);
       setSelectedLinks([]);
@@ -436,19 +450,39 @@ const Vault = () => {
   };
 
   const renderLinkCard = (link) => (
-    <div key={link.id} className="bg-white rounded-lg shadow p-4 sm:p-6 relative">
-      {isSelectingLinks && (
-        <div className="absolute top-4 right-4">
+    <div key={link.id} className="bg-white rounded-lg shadow p-3 sm:p-4 relative">
+      <div className="absolute top-3 right-3 flex flex-col items-end">
+        {editingDateId === link.id ? (
           <input
-            type="checkbox"
-            checked={selectedLinks.includes(link.id)}
-            onChange={() => toggleLinkSelection(link.id)}
-            disabled={!selectedLinks.includes(link.id) && selectedLinks.length >= 5}
-            className="w-5 h-5"
+            type="date"
+            value={editingDate}
+            onChange={(e) => setEditingDate(e.target.value)}
+            className="edit-date-input"
+            onBlur={() => handleEditDate(link.id, editingDate)}
+            autoFocus
           />
+        ) : (
+          <div 
+            className="date-display"
+            onClick={() => startEditingDate(link.id, link.createdAt)}
+            title="Click to edit date"
+          >
+            <p className="link-date">{new Date(link.createdAt).toLocaleDateString()}</p>
+          </div>
+        )}
+        <div className="settings-menu">
+          <button
+            onClick={() => handleDeleteLink(link.id)}
+            className="text-gray-400 hover:text-red-500 transition-colors p-1"
+            title="Delete link"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M6 3a1 1 0 011-1h6a1 1 0 011 1v1h4a1 1 0 110 2h-1v10a2 2 0 01-2 2H5a2 2 0 01-2-2V6H2a1 1 0 110-2h4V3zm3 3a1 1 0 00-1 1v7a1 1 0 102 0V7a1 1 0 00-1-1zm4 0a1 1 0 00-1 1v7a1 1 0 102 0V7a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </button>
         </div>
-      )}
-      <div className="link-header">
+      </div>
+      <div className="link-header mb-8">
         <div className="link-title-group">
           {editingTitleId === link.id ? (
             <div className="edit-title-container">
@@ -509,19 +543,8 @@ const Vault = () => {
             </>
           )}
         </div>
-        <div className="link-actions">
-          <button
-            onClick={() => handleDeleteLink(link.id)}
-            className="text-gray-400 hover:text-red-500 transition-colors p-2"
-            title="Delete link"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-          </button>
-        </div>
       </div>
-      <div className="link-content">
+      <div className="link-content mb-8">
         {editingCommentId === link.id ? (
           <div className="edit-comment-container">
             <textarea
@@ -574,12 +597,16 @@ const Vault = () => {
           </div>
         )}
       </div>
-      <div className="link-footer">
+      <div className="absolute bottom-3 right-3">
         <button
-          className={`link-button ${link.isRead ? 'mark-as-unread' : 'mark-as-read'}`}
+          className={`text-sm px-5 py-2.5 rounded-full font-medium shadow-sm transition-all duration-150 ease-in-out ${
+            link.isRead 
+              ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' 
+              : 'bg-blue-50 hover:bg-blue-100 text-blue-600'
+          }`}
           onClick={() => handleToggleRead(link.id, link.isRead)}
         >
-          {link.isRead ? 'Move to To Link' : 'Move to Linked'}
+          {link.isRead ? 'Move to Queue' : 'Move to Linked'}
         </button>
       </div>
       
@@ -693,6 +720,141 @@ const Vault = () => {
     );
   };
 
+  const handleEditReLink = async () => {
+    try {
+      setIsEditing(true);
+      
+      if (!currentMonthPost?.canEdit) {
+        setShowAlert({
+          type: 'error',
+          message: 'This ReLink can no longer be edited as the month has passed.'
+        });
+        return;
+      }
+
+      // Pre-select the current month's links
+      const currentLinkIds = currentMonthPost.monthlyLinks.map(link => {
+        const matchingLink = [...toReadLinks, ...readLinks].find(l => l.url === link.url);
+        return matchingLink ? matchingLink.id : null;
+      }).filter(Boolean);
+      
+      setSelectedLinks(currentLinkIds);
+      
+      setShowConfirmModal(true);
+      setConfirmModalConfig({
+        title: `Edit ${currentMonthPost.monthName} ${currentMonthPost.year} ReLink`,
+        message: 'Select up to 5 links for this month\'s ReLink. You can remove existing links and add new ones.',
+        confirmText: 'Update ReLink',
+        onConfirm: async () => {
+          try {
+            setIsSubmitting(true);
+            const allLinks = [...toReadLinks, ...readLinks];
+            const linksToShare = selectedLinks.map(linkId => {
+              const link = allLinks.find(l => l.id === linkId);
+              return {
+                url: link.url,
+                title: link.title,
+                description: link.description || '',
+                comment: link.comment || '',
+                image: link.image || ''
+              };
+            });
+            
+            await feedService.updateMonthlyPost(currentUser.uid, linksToShare);
+            
+            setShowAlert({
+              type: 'success',
+              message: 'Your ReLink has been updated!'
+            });
+            
+            // Refresh the monthly post status
+            await checkMonthlyShare();
+            
+            setSelectedLinks([]);
+            setIsEditing(false);
+            setShowConfirmModal(false);
+          } catch (error) {
+            console.error('Error updating ReLink:', error);
+            setShowAlert({
+              type: 'error',
+              message: error.message || 'Failed to update ReLink. Please try again.'
+            });
+          } finally {
+            setIsSubmitting(false);
+          }
+        },
+        onCancel: () => {
+          setSelectedLinks([]);
+          setIsEditing(false);
+          setShowConfirmModal(false);
+        }
+      });
+    } catch (error) {
+      console.error('Error preparing edit:', error);
+      setShowAlert({
+        type: 'error',
+        message: 'Failed to prepare edit. Please try again.'
+      });
+    }
+  };
+
+  const checkMonthlyShare = async () => {
+    try {
+      const post = await getCurrentMonthPost(currentUser.uid);
+      const hasShared = await feedService.hasPostedThisMonth(currentUser.uid);
+      setCurrentMonthPost(post);
+      setHasSharedThisMonth(hasShared);
+      setCanEditMonthlyPost(post?.canEdit || false);
+    } catch (err) {
+      console.error('Error checking monthly share:', err);
+      setShowAlert({
+        type: 'error',
+        message: 'Failed to check monthly post status.'
+      });
+    }
+  };
+
+  const handleShareLinks = async () => {
+    if (!selectedLinks || selectedLinks.length !== 5) {
+      setShareError('Please select exactly 5 links to share.');
+      return;
+    }
+
+    setShareLoading(true);
+    setShareError('');
+
+    try {
+      const linksToShare = selectedLinks.map(linkId => {
+        const link = [...toReadLinks, ...readLinks].find(l => l.id === linkId);
+        return {
+          url: link.url,
+          title: link.title,
+          description: link.description,
+          image: link.image,
+          comment: link.comment
+        };
+      });
+
+      await feedService.createPost({
+        userId: currentUser.uid,
+        type: 'monthly',
+        monthlyLinks: linksToShare
+      });
+
+      // Refresh monthly share status
+      await checkMonthlyShare();
+
+      setSelectedLinks([]);
+      setIsSelectingLinks(false);
+      setShareError('');
+    } catch (err) {
+      console.error('Error sharing links:', err);
+      setShareError(err.message || 'Failed to share links.');
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
   if (!currentUser) {
     return <div className="vault-container">Please sign in to access your vault.</div>;
   }
@@ -701,12 +863,31 @@ const Vault = () => {
     <div className="vault-container">
       <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <h1 className="text-xl sm:text-2xl font-bold">Your Vault</h1>
-        <button
-          onClick={() => setIsShareModalOpen(true)}
-          className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors text-sm sm:text-base"
-        >
-          Edit {currentMonthName} ReLink
-        </button>
+        <div className="flex gap-2">
+          {hasSharedThisMonth ? (
+            canEditMonthlyPost ? (
+              <button
+                onClick={handleEditReLink}
+                disabled={isSubmitting || (toReadLinks.length === 0 && readLinks.length === 0)}
+                className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              >
+                {isSubmitting ? 'Updating...' : 'Edit ReLink'}
+              </button>
+            ) : (
+              <div className="text-sm text-gray-500">
+                {currentMonthPost ? `Posted ${currentMonthPost.monthName} ReLink` : 'ReLink posted'}
+              </div>
+            )
+          ) : (
+            <button
+              onClick={handleShareLinks}
+              disabled={selectedLinks.length !== 5 || isSubmitting}
+              className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors disabled:opacity-50"
+            >
+              {isSubmitting ? 'Sharing...' : 'Share ReLink'}
+            </button>
+          )}
+        </div>
       </div>
 
       {shareError && (
@@ -714,6 +895,75 @@ const Vault = () => {
           {shareError}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => {
+          setShowConfirmModal(false);
+          setSelectedLinks([]);
+          setIsEditing(false);
+        }}
+        onConfirm={confirmModalConfig.onConfirm}
+        title={confirmModalConfig.title}
+        message={
+          <div className="space-y-4">
+            <p>{confirmModalConfig.message}</p>
+            <div className="bg-white p-4 rounded-lg max-h-[60vh] overflow-y-auto">
+              <p className="font-medium mb-4">Select 5 links from your Linked section ({selectedLinks.length}/5 selected):</p>
+              <div className="space-y-3">
+                {readLinks.map(link => {
+                  const isSelected = selectedLinks.includes(link.id);
+                  const canSelect = isSelected || selectedLinks.length < 5;
+                  
+                  return (
+                    <div 
+                      key={link.id} 
+                      className={`p-3 border rounded-lg transition-colors ${
+                        isSelected ? 'border-primary bg-primary/5' : 'border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {
+                            if (isSelected) {
+                              setSelectedLinks(selectedLinks.filter(id => id !== link.id));
+                            } else if (canSelect) {
+                              setSelectedLinks([...selectedLinks, link.id]);
+                            }
+                          }}
+                          disabled={!isSelected && !canSelect}
+                          className="mt-1 w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-gray-900 truncate">{link.title}</h3>
+                          <a 
+                            href={link.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="text-sm text-blue-600 hover:underline truncate block"
+                          >
+                            {link.url}
+                          </a>
+                          {link.comment && (
+                            <p className="mt-1 text-sm text-gray-600 line-clamp-2">{link.comment}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+                {readLinks.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">No links available in your Linked section.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        }
+        confirmText={confirmModalConfig.confirmText}
+        type="primary"
+      />
 
       <div className="add-links-section">
         <h2 className="text-lg sm:text-xl font-semibold mb-4">Add New Link</h2>

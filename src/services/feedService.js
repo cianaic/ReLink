@@ -31,6 +31,18 @@ const getCacheKey = (userIds, page) => {
   return `feed:${userIds.join(',')}:${page}`;
 };
 
+const getMonthBounds = (date = new Date()) => {
+  const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+  const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  return { monthStart, monthEnd };
+};
+
+const isWithinCurrentMonth = (date) => {
+  const { monthStart, monthEnd } = getMonthBounds();
+  const checkDate = new Date(date);
+  return checkDate >= monthStart && checkDate <= monthEnd;
+};
+
 // Check if user has already posted this month
 const hasPostedThisMonth = async (userId) => {
   try {
@@ -60,14 +72,26 @@ const hasPostedThisMonth = async (userId) => {
         currentMonthStart: currentMonthStart.toISOString()
       });
       
-      // If the stored post is from the current month
+      // If the stored post is from the current month, verify it still exists
       if (postMonthStart.getTime() === currentMonthStart.getTime()) {
-        console.log('Found current month post in user profile');
-        return true;
+        // Verify the post still exists
+        const postRef = doc(db, 'relinks', currentMonthPost.postId);
+        const postDoc = await getDoc(postRef);
+        
+        if (postDoc.exists()) {
+          console.log('Found current month post in user profile and verified it exists');
+          return true;
+        } else {
+          // Post was deleted, clear the currentMonthPost
+          console.log('Post referenced in profile was deleted, clearing profile');
+          await updateDoc(userRef, {
+            currentMonthPost: null
+          });
+        }
       }
     }
 
-    // If no current month post in profile, check the posts collection
+    // If no valid current month post in profile, check the posts collection
     const monthStart = getMonthStartDate(new Date());
     const monthEnd = new Date(monthStart);
     monthEnd.setMonth(monthStart.getMonth() + 1);
@@ -77,11 +101,20 @@ const hasPostedThisMonth = async (userId) => {
       monthEnd: monthEnd.toISOString() 
     });
 
+    // Clear any stale cache entries for this user
+    const cacheKeys = Array.from(cache.keys());
+    cacheKeys.forEach(key => {
+      if (key.includes(userId)) {
+        cache.delete(key);
+      }
+    });
+
     const q = query(
       collection(db, 'relinks'),
       where('userId', '==', userId),
       where('createdAt', '>=', Timestamp.fromDate(monthStart)),
-      where('createdAt', '<', Timestamp.fromDate(monthEnd))
+      where('createdAt', '<', Timestamp.fromDate(monthEnd)),
+      where('deleted', '!=', true) // Only get non-deleted posts
     );
 
     const snapshot = await getDocs(q);
@@ -109,7 +142,7 @@ const hasPostedThisMonth = async (userId) => {
     console.log('No posts found for current month');
     return false;
   } catch (error) {
-    console.error('Error checking monthly post:', error);
+    console.error('Error checking monthly post status:', error);
     return false;
   }
 };
@@ -130,7 +163,7 @@ const createPost = async (postData) => {
     }
 
     const now = new Date();
-    const monthStart = getMonthStartDate(now);
+    const { monthStart } = getMonthBounds(now);
     const monthName = getMonthName(now);
 
     const docRef = await addDoc(collection(db, 'relinks'), {
@@ -151,7 +184,7 @@ const createPost = async (postData) => {
         monthNumber: now.getMonth() + 1,
         monthName: monthName,
         year: now.getFullYear(),
-        updatedAt: new Date().toISOString()
+        updatedAt: serverTimestamp()
       }
     });
 
@@ -172,6 +205,7 @@ const createPost = async (postData) => {
 const getFeedPosts = async (page = 1, lastDoc = null, userIds = []) => {
   try {
     if (!Array.isArray(userIds) || userIds.length === 0) {
+      console.log('No user IDs provided for feed');
       return {
         posts: [],
         lastVisible: null
@@ -188,17 +222,38 @@ const getFeedPosts = async (page = 1, lastDoc = null, userIds = []) => {
       userIds = [currentUserId];
     }
 
-    const cacheKey = getCacheKey(userIds, page);
+    // Always verify connections, even for admin users
+    const userRef = doc(db, 'users', currentUserId);
+    const userDoc = await getDoc(userRef);
+    const connections = userDoc.data()?.connections || [];
+    
+    // Filter userIds to only include connected users and self
+    const validUserIds = [currentUserId, ...userIds.filter(id => 
+      id === currentUserId || connections.includes(id)
+    )];
+    
+    console.log('Filtered to valid connected users:', validUserIds);
+
+    // If no valid users (other than self), return early
+    if (validUserIds.length === 1 && !hasShared) {
+      console.log('No connected users and has not shared, returning empty feed');
+      return {
+        posts: [],
+        lastVisible: null
+      };
+    }
+
+    const cacheKey = getCacheKey(validUserIds, page);
     const cachedData = cache.get(cacheKey);
     if (cachedData && Date.now() - cachedData.timestamp < CACHE_DURATION) {
       console.log('Returning cached feed data');
       return cachedData.data;
     }
 
-    console.log('Querying posts for users:', userIds);
+    console.log('Querying posts for users:', validUserIds);
     let q = query(
       collection(db, 'relinks'),
-      where('userId', 'in', userIds),
+      where('userId', 'in', validUserIds),
       orderBy('createdAt', 'desc'),
       limit(POSTS_PER_PAGE)
     );
@@ -243,15 +298,18 @@ const deletePost = async (postId, userId) => {
       throw new Error('Post not found');
     }
 
-    const postData = postDoc.data();
-    if (postData.userId !== userId) {
+    const post = postDoc.data();
+    if (post.userId !== userId) {
       throw new Error('Not authorized to delete this post');
     }
 
-    // Delete the post
-    await deleteDoc(postRef);
+    // Mark the post as deleted instead of actually deleting it
+    await updateDoc(postRef, {
+      deleted: true,
+      deletedAt: serverTimestamp()
+    });
 
-    // Update user's current month post if this was their monthly post
+    // Clear the currentMonthPost from user's profile if this was their monthly post
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
     
@@ -264,11 +322,15 @@ const deletePost = async (postId, userId) => {
       }
     }
 
-    // Clear cache
-    const firstPageCacheKey = getCacheKey([userId], 1);
-    if (cache.has(firstPageCacheKey)) {
-      cache.delete(firstPageCacheKey);
-    }
+    // Clear cache for this user
+    const cacheKeys = Array.from(cache.keys());
+    cacheKeys.forEach(key => {
+      if (key.includes(userId)) {
+        cache.delete(key);
+      }
+    });
+
+    return true;
   } catch (error) {
     console.error('Error deleting post:', error);
     throw error;
@@ -431,6 +493,81 @@ const relinkPost = async (postId, userId, authorId, authorName, linkData = null)
   }
 };
 
+export const updateMonthlyPost = async (userId, newLinks) => {
+  try {
+    const currentMonthPost = await getCurrentMonthPost(userId);
+    if (!currentMonthPost) {
+      throw new Error('No ReLink found for this month');
+    }
+
+    if (!currentMonthPost.canEdit) {
+      throw new Error('This ReLink can no longer be edited as the month has passed');
+    }
+
+    // Update the post with new links
+    const postRef = doc(db, 'relinks', currentMonthPost.id);
+    await updateDoc(postRef, {
+      monthlyLinks: newLinks,
+      updatedAt: serverTimestamp()
+    });
+
+    // Update the user's profile
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+      'currentMonthPost.updatedAt': serverTimestamp()
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error updating monthly post:', error);
+    throw error;
+  }
+};
+
+// Get current month post
+export const getCurrentMonthPost = async (userId) => {
+  try {
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      return null;
+    }
+
+    const userData = userDoc.data();
+    const currentMonthPost = userData?.currentMonthPost;
+
+    if (currentMonthPost) {
+      const postDate = new Date(currentMonthPost.monthStart);
+      const { monthStart } = getMonthBounds();
+      
+      // Check if the post is from the current month
+      if (postDate.getFullYear() === monthStart.getFullYear() && 
+          postDate.getMonth() === monthStart.getMonth()) {
+        const postRef = doc(db, 'relinks', currentMonthPost.postId);
+        const postDoc = await getDoc(postRef);
+        
+        if (postDoc.exists()) {
+          const postData = postDoc.data();
+          return {
+            ...postData,
+            id: postDoc.id,
+            canEdit: isWithinCurrentMonth(new Date()), // Only allow edits within the same month
+            monthStart: currentMonthPost.monthStart,
+            monthName: currentMonthPost.monthName,
+            year: currentMonthPost.year
+          };
+        }
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error getting current month post:', error);
+    throw error;
+  }
+};
+
 const feedService = {
   hasPostedThisMonth,
   createPost,
@@ -438,7 +575,9 @@ const feedService = {
   deletePost,
   toggleLike,
   deleteComment,
-  relinkPost
+  relinkPost,
+  updateMonthlyPost,
+  getCurrentMonthPost
 };
 
 export default feedService; 

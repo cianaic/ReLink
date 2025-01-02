@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "ReLink Saver",
+  "version": "1.0",
+  "description": "Quickly save links to your ReLink vault",
+  "permissions": [
+    "activeTab",
+    "notifications",
+    "storage",
+    "identity"
+  ],
+  "host_permissions": [
+    "https://firestore.googleapis.com/*",
+    "https://api.microlink.io/*",
+    "https://www.googleapis.com/*",
+    "https://*.gstatic.com/*"
+  ],
+  "action": {
+    "default_title": "Save to ReLink"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "oauth2": {
+    "client_id": "960840861355-qqvf0p2qk8v5nh5lv99tdtpj1bu0n990.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile"
+    ]
+  }
+} 

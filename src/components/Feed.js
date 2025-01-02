@@ -26,12 +26,16 @@ const Feed = () => {
   useEffect(() => {
     const loadConnections = async () => {
       try {
-        // Get connections where user is in the users array
+        // Get connections where user is in the users array and status is 'accepted'
         const connectionsRef = collection(db, 'connections');
-        const q = query(connectionsRef, where('users', 'array-contains', currentUser.uid));
+        const q = query(
+          connectionsRef, 
+          where('users', 'array-contains', currentUser.uid),
+          where('status', '==', 'accepted')
+        );
         const snapshot = await getDocs(q);
         
-        // Get all other users from connections where current user is a member
+        // Get all other users from accepted connections
         const connectedUsers = snapshot.docs.reduce((acc, doc) => {
           const users = doc.data().users || [];
           return [...acc, ...users.filter(uid => uid !== currentUser.uid)];
@@ -39,7 +43,7 @@ const Feed = () => {
 
         // Remove duplicates
         const uniqueConnections = [...new Set(connectedUsers)];
-        console.log('Loaded connections:', uniqueConnections);
+        console.log('Loaded accepted connections:', uniqueConnections);
         setConnections(uniqueConnections);
         return uniqueConnections;
       } catch (error) {
@@ -57,9 +61,12 @@ const Feed = () => {
             loadConnections()
           ]);
           setHasShared(shared);
+          
+          // Only load posts if user has shared and has connections
           if (shared) {
-            console.log('Loading posts for users:', [currentUser.uid, ...connectionsList]);
-            await loadPosts([currentUser.uid, ...connectionsList]);
+            const userIds = [currentUser.uid, ...connectionsList];
+            console.log('Loading posts for users:', userIds);
+            await loadPosts(userIds);
           }
         } catch (error) {
           console.error('Error checking shared status:', error);
@@ -93,6 +100,15 @@ const Feed = () => {
       setDeletingPost(postId);
       await feedService.deletePost(postId, currentUser.uid);
       setPosts(posts.filter(post => post.id !== postId));
+      
+      // After deleting, check if this was the monthly post and refresh the feed state
+      const hasShared = await feedService.hasPostedThisMonth(currentUser.uid);
+      setHasShared(hasShared);
+      
+      // If user no longer has a post this month, clear the feed
+      if (!hasShared) {
+        setPosts([]);
+      }
     } catch (error) {
       console.error('Error deleting post:', error);
       alert('Failed to delete post. Please try again.');
@@ -259,34 +275,41 @@ const Feed = () => {
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{post.authorName}</p>
-          <p className="text-xs sm:text-sm text-gray-500">
-            {new Date(post.createdAt).toLocaleDateString()}
-          </p>
-        </div>
-        {post.type === 'monthly' && (
-          <div className="text-right">
-            <h3 className="text-sm sm:text-lg font-semibold text-primary">
-              {post.monthName} {post.year} ReLink
-            </h3>
+          <div className="flex items-center gap-2">
+            <Link 
+              to={`/profile/${post.userId}`}
+              className="font-medium text-gray-900 hover:text-primary transition-colors"
+            >
+              {post.userName}
+            </Link>
+            <span className="text-gray-500 text-sm">
+              {new Date(post.createdAt).toLocaleDateString()}
+            </span>
           </div>
-        )}
-        {post.userId === currentUser.uid && (
-          <button
-            onClick={() => setConfirmDelete(post.id)}
-            disabled={deletingPost === post.id}
-            className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 transition-colors"
-            title="Delete post"
-          >
-            {deletingPost === post.id ? (
-              <span className="loading">...</span>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            )}
-          </button>
-        )}
+          {post.type === 'monthly' && (
+            <div className="text-right">
+              <h3 className="text-sm sm:text-lg font-semibold text-primary">
+                {post.monthName} {post.year} ReLink
+              </h3>
+            </div>
+          )}
+          {post.userId === currentUser.uid && (
+            <button
+              onClick={() => setConfirmDelete(post.id)}
+              disabled={deletingPost === post.id}
+              className="p-1.5 sm:p-2 text-gray-400 hover:text-red-500 transition-colors"
+              title="Delete post"
+            >
+              {deletingPost === post.id ? (
+                <span className="loading">...</span>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       {post.type === 'monthly' && post.monthlyLinks ? (
@@ -422,26 +445,6 @@ const Feed = () => {
               {(post.likes || []).length || 'Like'}
             </span>
           </button>
-
-          {post.userId !== currentUser.uid && (
-            <button
-              onClick={() => handleRelink(post, post.userId, post.authorName)}
-              disabled={relinkingPost === post.url || relinkedItems.has(post.url)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm text-gray-500 hover:bg-gray-100 transition-colors`}
-              title={relinkedItems.has(post.url) ? 'Added to vault' : 'Add to your vault'}
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className={`h-4 w-4 ${relinkingPost === post.url ? 'animate-spin' : ''}`}
-                fill="none"
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
-              <span className="font-medium">{relinkedItems.has(post.url) ? 'ReLinked' : 'ReLink'}</span>
-            </button>
-          )}
         </div>
 
         {post.comments?.length > 0 && (
@@ -461,7 +464,12 @@ const Feed = () => {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-xs sm:text-sm">
-                        <span className="font-medium">{comment.userName}</span>
+                        <Link 
+                          to={`/profile/${comment.userId}`}
+                          className="font-medium hover:text-primary transition-colors"
+                        >
+                          {comment.userName}
+                        </Link>
                         {' '}
                         <span className="text-gray-500 text-xs">
                           {new Date(comment.createdAt).toLocaleDateString()}

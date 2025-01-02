@@ -171,4 +171,40 @@ export const rejectFriendRequest = async (userId, requesterId) => {
     console.error('Error rejecting friend request:', error);
     throw new Error('Failed to reject friend request');
   }
+};
+
+// Check friendship status between two users
+export const checkFriendshipStatus = async (userId, targetUserId) => {
+  try {
+    // First check if they are already connected
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    const connections = userDoc.data()?.connections || [];
+    
+    if (connections.includes(targetUserId)) {
+      return 'friends';
+    }
+
+    // Check for pending requests
+    const connectionsRef = collection(db, 'connections');
+    const q = query(connectionsRef, 
+      where('users', 'array-contains', userId),
+      where('status', '==', 'pending')
+    );
+    
+    const querySnapshot = await getDocs(q);
+    let isPending = false;
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.users.includes(targetUserId)) {
+        isPending = true;
+      }
+    });
+
+    return isPending ? 'pending' : 'none';
+  } catch (error) {
+    console.error('Error checking friendship status:', error);
+    throw new Error('Failed to check friendship status');
+  }
 }; 

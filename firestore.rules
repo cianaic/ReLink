@@ -77,9 +77,16 @@ service cloud.firestore {
     }
     
     match /relinks/{document} {
-      allow read: if request.auth != null;
+      function isConnected() {
+        return exists(/databases/$(database)/documents/connections/{connectionId}) 
+          where connectionId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.connections;
+      }
+      
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid || // Own posts
+        resource.data.userId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.connections // Friend's posts
+      );
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      // Allow users to modify their own posts or admin to modify any post
       allow update, delete: if request.auth != null && (
         resource.data.userId == request.auth.uid || 
         resource.data.authorId == request.auth.uid || 
